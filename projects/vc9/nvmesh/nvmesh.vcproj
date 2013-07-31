@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../src/nvmesh,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../src/nvmesh,../../../extern/poshlib"
 				PreprocessorDefinitions="_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../src/nvmesh,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../src/nvmesh,../../../extern/poshlib"
 				PreprocessorDefinitions="_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -175,7 +175,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../src/nvmesh,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../src/nvmesh,../../../extern/poshlib"
 				PreprocessorDefinitions="NDEBUG"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -245,7 +245,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../src/nvmesh,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../src/nvmesh,../../../extern/poshlib"
 				PreprocessorDefinitions="NDEBUG"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -294,11 +294,11 @@
 			Name="geometry"
 			>
 			<File
-				RelativePath="../..\../..\src\nvmesh\geometry\Measurements.cpp"
+				RelativePath="..\..\..\src\nvmesh\geometry\Measurements.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\geometry\Measurements.h"
+				RelativePath="..\..\..\src\nvmesh\geometry\Measurements.h"
 				>
 			</File>
 		</Filter>
@@ -306,35 +306,35 @@
 			Name="halfedge"
 			>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Edge.cpp"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Edge.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Edge.h"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Edge.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Face.cpp"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Face.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Face.h"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Face.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Mesh.cpp"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Mesh.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Mesh.h"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Mesh.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Vertex.cpp"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Vertex.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\halfedge\Vertex.h"
+				RelativePath="..\..\..\src\nvmesh\halfedge\Vertex.h"
 				>
 			</File>
 		</Filter>
@@ -342,103 +342,31 @@
 			Name="param"
 			>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\Atlas.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\Atlas.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\Atlas.h"
+				RelativePath="..\..\..\src\nvmesh\param\Atlas.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\AtlasBuilder.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\AtlasBuilder.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\AtlasBuilder.h"
+				RelativePath="..\..\..\src\nvmesh\param\AtlasBuilder.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\AtlasPacker.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\AtlasPacker.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\AtlasPacker.h"
+				RelativePath="..\..\..\src\nvmesh\param\AtlasPacker.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\BoundaryMap.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="../..\../..\src\nvmesh\param\BoundaryMap.h"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="../..\../..\src\nvmesh\param\ConformalMap.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\BoundaryMap.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -474,7 +402,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\ConformalMap.h"
+				RelativePath="..\..\..\src\nvmesh\param\BoundaryMap.h"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -510,43 +438,115 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\LeastSquaresConformalMap.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\ConformalMap.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\nvmesh\param\ConformalMap.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\nvmesh\param\LeastSquaresConformalMap.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\LeastSquaresConformalMap.h"
+				RelativePath="..\..\..\src\nvmesh\param\LeastSquaresConformalMap.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\OrthogonalProjectionMap.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\OrthogonalProjectionMap.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\OrthogonalProjectionMap.h"
+				RelativePath="..\..\..\src\nvmesh\param\OrthogonalProjectionMap.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\ParameterizationQuality.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\ParameterizationQuality.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\ParameterizationQuality.h"
+				RelativePath="..\..\..\src\nvmesh\param\ParameterizationQuality.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\SingleFaceMap.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\SingleFaceMap.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\SingleFaceMap.h"
+				RelativePath="..\..\..\src\nvmesh\param\SingleFaceMap.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\Util.cpp"
+				RelativePath="..\..\..\src\nvmesh\param\Util.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\param\Util.h"
+				RelativePath="..\..\..\src\nvmesh\param\Util.h"
 				>
 			</File>
 		</Filter>
@@ -554,15 +554,15 @@
 			Name="raster"
 			>
 			<File
-				RelativePath="../..\../..\src\nvmesh\raster\ClippedTriangle.h"
+				RelativePath="..\..\..\src\nvmesh\raster\ClippedTriangle.h"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\raster\Raster.cpp"
+				RelativePath="..\..\..\src\nvmesh\raster\Raster.cpp"
 				>
 			</File>
 			<File
-				RelativePath="../..\../..\src\nvmesh\raster\Raster.h"
+				RelativePath="..\..\..\src\nvmesh\raster\Raster.h"
 				>
 			</File>
 		</Filter>
@@ -570,20 +570,20 @@
 			Name="weld"
 			>
 			<File
-				RelativePath="../..\../..\src\nvmesh\weld\Weld.h"
+				RelativePath="..\..\..\src\nvmesh\weld\Weld.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="../..\../..\src\nvmesh\MeshBuilder.cpp"
+			RelativePath="..\..\..\src\nvmesh\MeshBuilder.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmesh\MeshBuilder.h"
+			RelativePath="..\..\..\src\nvmesh\MeshBuilder.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmesh\MeshTopology.cpp"
+			RelativePath="..\..\..\src\nvmesh\MeshTopology.cpp"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
@@ -594,7 +594,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmesh\MeshTopology.h"
+			RelativePath="..\..\..\src\nvmesh\MeshTopology.h"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
@@ -605,7 +605,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmesh\nvmesh.cpp"
+			RelativePath="..\..\..\src\nvmesh\nvmesh.cpp"
 			>
 			<FileConfiguration
 				Name="Release|x64"
@@ -617,7 +617,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmesh\nvmesh.h"
+			RelativePath="..\..\..\src\nvmesh\nvmesh.h"
 			>
 		</File>
 	</Files>

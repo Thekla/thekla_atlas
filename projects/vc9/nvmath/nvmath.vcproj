@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib"
 				PreprocessorDefinitions="_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib"
 				PreprocessorDefinitions="_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -175,7 +175,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib"
 				PreprocessorDefinitions="NDEBUG"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -246,7 +246,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="../..,../../../../src,../../../../extern/poshlib"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib"
 				PreprocessorDefinitions="NDEBUG"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -289,18 +289,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="../..\../..\src\nvmath\Basis.cpp"
+			RelativePath="..\..\..\src\nvmath\Basis.cpp"
 			>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Basis.h"
+			RelativePath="..\..\..\src\nvmath\Basis.h"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
@@ -311,91 +304,122 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Box.cpp"
+			RelativePath="..\..\..\src\nvmath\Box.cpp"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\Box.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Box.h"
+			RelativePath="..\..\..\src\nvmath\Box.inl"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Box.inl"
+			RelativePath="..\..\..\src\nvmath\ConvexHull.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\ConvexHull.cpp"
+			RelativePath="..\..\..\src\nvmath\ConvexHull.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\ConvexHull.h"
+			RelativePath="..\..\..\src\nvmath\Fitting.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Fitting.cpp"
+			RelativePath="..\..\..\src\nvmath\Fitting.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Fitting.h"
+			RelativePath="..\..\..\src\nvmath\KahanSum.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\KahanSum.h"
+			RelativePath="..\..\..\src\nvmath\Matrix.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Matrix.cpp"
+			RelativePath="..\..\..\src\nvmath\Matrix.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Matrix.h"
+			RelativePath="..\..\..\src\nvmath\Matrix.inl"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Matrix.inl"
+			RelativePath="..\..\..\src\nvmath\nvmath.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\nvmath.h"
+			RelativePath="..\..\..\src\nvmath\Plane.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Random.cpp"
+			RelativePath="..\..\..\src\nvmath\Plane.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Random.h"
+			RelativePath="..\..\..\src\nvmath\Plane.inl"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Solver.cpp"
+			RelativePath="..\..\..\src\nvmath\Quaternion.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Solver.h"
+			RelativePath="..\..\..\src\nvmath\Random.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Sparse.cpp"
+			RelativePath="..\..\..\src\nvmath\Random.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Sparse.h"
+			RelativePath="..\..\..\src\nvmath\Solver.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\TypeSerialization.cpp"
+			RelativePath="..\..\..\src\nvmath\Solver.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\TypeSerialization.h"
+			RelativePath="..\..\..\src\nvmath\Sparse.cpp"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Vector.h"
+			RelativePath="..\..\..\src\nvmath\Sparse.h"
 			>
 		</File>
 		<File
-			RelativePath="../..\../..\src\nvmath\Vector.inl"
+			RelativePath="..\..\..\src\nvmath\Sphere.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\Sphere.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\TypeSerialization.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\TypeSerialization.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\Vector.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\Vector.inl"
 			>
 		</File>
 	</Files>

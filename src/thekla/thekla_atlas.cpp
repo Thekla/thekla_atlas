@@ -16,7 +16,14 @@ using namespace Thekla;
 using namespace nv;
 
 
-static Atlas_Error input_to_mesh(const Atlas_Input_Mesh * input, HalfEdge::Mesh * mesh) {
+inline Atlas_Output_Mesh * set_error(Atlas_Error * error, Atlas_Error code) {
+    if (error) *error = code;
+    return NULL;
+}
+
+
+
+static void input_to_mesh(const Atlas_Input_Mesh * input, HalfEdge::Mesh * mesh, Atlas_Error * error) {
 
     Array<uint> canonicalMap;
     canonicalMap.reserve(input->vertex_count);
@@ -58,28 +65,14 @@ static Atlas_Error input_to_mesh(const Atlas_Input_Mesh * input, HalfEdge::Mesh 
 
     mesh->linkBoundary();
 
-    /*if (non_manifold_faces != 0) {
-        return Atlas_Error_Invalid_Mesh_Non_Manifold;
-    }*/
-
-    return Atlas_Error_Success;
+    if (non_manifold_faces != 0 && error != NULL) {
+        *error = Atlas_Error_Invalid_Mesh_Non_Manifold;
+    }
 }
 
-static Atlas_Error mesh_atlas_to_output(const HalfEdge::Mesh * mesh, const Atlas & atlas, Atlas_Output_Mesh * output) {
+static Atlas_Output_Mesh * mesh_atlas_to_output(const HalfEdge::Mesh * mesh, const Atlas & atlas, Atlas_Error * error) {
 
-    /*
-    struct Atlas_Output_Vertex {
-        float uv[2];
-        int xref;       // Index of vertex from which this vertex originated.
-    };
-
-    struct Atlas_Output_Mesh {
-        int vertex_count;
-        int index_count;
-        Atlas_Output_Vertex * vertex_array;
-        int * index_array;
-    };
-    */
+    Atlas_Output_Mesh * output = new Atlas_Output_Mesh;
 
     // Allocate vertices.
     const int vertex_count = atlas.vertexCount();
@@ -126,38 +119,62 @@ static Atlas_Error mesh_atlas_to_output(const HalfEdge::Mesh * mesh, const Atlas
         output->index_array[3*f+2] = vertexOffset + edge->next->next->vertex->id;
     }
 
-    return Atlas_Error_Success;
+    // @@ Init these!
+    *error = Atlas_Error_Not_Implemented;
+    output->atlas_width = 0;
+    output->atlas_height = 0;
+
+    return output;
 }
 
 
+void atlas_set_default_options(Atlas_Options * options) {
+    if (options != NULL) {
+        // These are the default values we use on The Witness.
 
-extern "C" Atlas_Error atlas_generate(const Atlas_Options * options, const Atlas_Input_Mesh * input, Atlas_Output_Mesh * output) {
+        options->charter = Atlas_Charter_Default;
+        options->charter_options.witness.proxy_fit_metric_weight = 2.0f;
+        options->charter_options.witness.roundness_metric_weight = 0.01f;
+        options->charter_options.witness.straightness_metric_weight = 6.0f;
+        options->charter_options.witness.normal_seam_metric_weight = 4.0f;
+        options->charter_options.witness.texture_seam_metric_weight = 0.5f;
+        options->charter_options.witness.max_chart_area = FLT_MAX;
+        options->charter_options.witness.max_boundary_length = FLT_MAX;
+
+        options->mapper = Atlas_Mapper_Default;
+
+        options->packer = Atlas_Packer_Default;
+        options->packer_options.witness.packing_quality = 0;
+        options->packer_options.witness.texel_area = 8;
+        options->packer_options.witness.texel_padding = 1;
+    }
+}
+
+
+Atlas_Output_Mesh * atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error) {
     // Validate args.
-    if (options == NULL || input == NULL || output == NULL) return Atlas_Error_Invalid_Args;
+    if (input == NULL || options == NULL || error == NULL) return set_error(error, Atlas_Error_Invalid_Args);
 
     // Validate options.
-    if (options->charter != Atlas_Charter_Extract && options->charter != Atlas_Charter_Witness) {
-        return Atlas_Error_Invalid_Options;
+    if (options->charter != Atlas_Charter_Witness) {
+        return set_error(error, Atlas_Error_Invalid_Options);
     }
-    if (options->charter == Atlas_Charter_Extract && options->charter_option_count != 0) {
-        return Atlas_Error_Invalid_Options;
-    }
-    if (options->charter == Atlas_Charter_Witness && options->charter_option_count != 1) {
-        return Atlas_Error_Invalid_Options;
+    if (options->charter == Atlas_Charter_Witness) {
+        // @@ Validate input options!
     }
 
     if (options->mapper != Atlas_Mapper_LSCM) {
-        return Atlas_Error_Invalid_Options;
+        return set_error(error, Atlas_Error_Invalid_Options);
     }
-    if (options->mapper == Atlas_Mapper_LSCM && options->charter_option_count != 0) {
-        return Atlas_Error_Invalid_Options;
+    if (options->mapper == Atlas_Mapper_LSCM) {
+        // No options.
     }
 
     if (options->packer != Atlas_Packer_Witness) {
-        return Atlas_Error_Invalid_Options;
+        return set_error(error, Atlas_Error_Invalid_Options);
     }
-    if (options->packer == Atlas_Packer_Witness && options->charter_option_count != 1) {
-        return Atlas_Error_Invalid_Options;
+    if (options->packer == Atlas_Packer_Witness) {
+        // @@ Validate input options!
     }
 
     // Validate input mesh.
@@ -170,7 +187,7 @@ extern "C" Atlas_Error atlas_generate(const Atlas_Options * options, const Atlas
             v1 < 0 || v1 >= input->vertex_count || 
             v2 < 0 || v2 >= input->vertex_count)
         {
-            return Atlas_Error_Invalid_Mesh;
+            return set_error(error, Atlas_Error_Invalid_Mesh);
         }
     }
 
@@ -178,9 +195,10 @@ extern "C" Atlas_Error atlas_generate(const Atlas_Options * options, const Atlas
     // Build half edge mesh.
     AutoPtr<HalfEdge::Mesh> mesh(new HalfEdge::Mesh);
 
-    Atlas_Error error = input_to_mesh(input, mesh.ptr());
-    if (error != Atlas_Error_Success) {
-        return error;
+    input_to_mesh(input, mesh.ptr(), error);
+
+    if (*error == Atlas_Error_Invalid_Mesh) {
+        return NULL;
     }
 
 
@@ -188,12 +206,17 @@ extern "C" Atlas_Error atlas_generate(const Atlas_Options * options, const Atlas
     Atlas atlas(mesh.ptr());
     
     if (options->charter == Atlas_Charter_Extract) {
-        return Atlas_Error_Not_Implemented;
+        return set_error(error, Atlas_Error_Not_Implemented);
     }
     else if (options->charter == Atlas_Charter_Witness) {
-        // @@ Init segmentations settings!
         SegmentationSettings segmentation_settings;
-        // options->charter_options[0];
+        segmentation_settings.proxyFitMetricWeight = options->charter_options.witness.proxy_fit_metric_weight;
+        segmentation_settings.roundnessMetricWeight = options->charter_options.witness.roundness_metric_weight;
+        segmentation_settings.straightnessMetricWeight = options->charter_options.witness.straightness_metric_weight;
+        segmentation_settings.normalSeamMetricWeight = options->charter_options.witness.normal_seam_metric_weight;
+        segmentation_settings.textureSeamMetricWeight = options->charter_options.witness.texture_seam_metric_weight;
+        segmentation_settings.maxChartArea = options->charter_options.witness.max_chart_area;
+        segmentation_settings.maxBoundaryLength = options->charter_options.witness.max_boundary_length;
 
         atlas.computeCharts(segmentation_settings);
     }
@@ -207,14 +230,24 @@ extern "C" Atlas_Error atlas_generate(const Atlas_Options * options, const Atlas
 
     // Packer.
     if (options->packer == Atlas_Packer_Witness) {
-        int packing_quality = 0; // best
-        float texel_area = options->packer_options[0];
-        int texel_padding = 1;      // @@ Add more padding and block alignment options.
+        int packing_quality = options->packer_options.witness.packing_quality;
+        float texel_area = options->packer_options.witness.texel_area;
+        int texel_padding = options->packer_options.witness.texel_padding;
 
         /*float utilization =*/ atlas.packCharts(packing_quality, texel_area, texel_padding);
     }
 
 
     // Build output mesh.
-    return mesh_atlas_to_output(mesh.ptr(), atlas, output);
+    return mesh_atlas_to_output(mesh.ptr(), atlas, error);
 }
+
+
+void atlas_free(Atlas_Output_Mesh * output) {
+    if (output != NULL) {
+        delete [] output->vertex_array;
+        delete [] output->index_array;
+        delete output;
+    }
+}
+

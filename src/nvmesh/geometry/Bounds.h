@@ -1,20 +1,20 @@
-// This code is in the public domain -- castanyo@yahoo.es
+// This code is in the public domain -- Ignacio Castaño <castano@gmail.com>
 
 #pragma once
 #ifndef NV_MESH_MESHBOUNDS_H
 #define NV_MESH_MESHBOUNDS_H
 
-#include <nvmath/Sphere.h>
-#include <nvmath/Box.h>
+#include "nvmath/Sphere.h"
+#include "nvmath/Box.h"
 
-#include <nvmesh/nvmesh.h>
+#include "nvmesh/nvmesh.h"
 
 namespace nv
 {
     class BaseMesh;
     namespace HalfEdge { class Mesh; }
 
-    /// Bounding volumes computation.
+    // Bounding volumes computation.
     namespace MeshBounds
     {
         Box box(const BaseMesh * mesh);

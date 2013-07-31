@@ -4,38 +4,38 @@
 namespace Thekla {
 
 struct Obj_Vertex {
-	float position[3];
-	float normal[3];
-	float uv[2];
-	int first_colocal;
+    float position[3];
+    float normal[3];
+    float uv[2];
+    int first_colocal;
 };
 
 struct Obj_Face {
-	int vertex_index[3];
-	int material_index;
+    int vertex_index[3];
+    int material_index;
 };
 
 struct Obj_Material {
-	// @@ Read obj mtl parameters as is.
+    // @@ Read obj mtl parameters as is.
 };
 
 struct Obj_Mesh {
-	int vertex_count;
-	Obj_Vertex * vertex_array;
+    int vertex_count;
+    Obj_Vertex * vertex_array;
 
-	int face_count;
-	Obj_Face * face_array;
+    int face_count;
+    Obj_Face * face_array;
 
-	int material_count;
-	Obj_Material * material_array;
+    int material_count;
+    Obj_Material * material_array;
 };
 
 enum Load_Flags {
-	Load_Flag_Weld_Attributes,
+    Load_Flag_Weld_Attributes,
 };
 
 struct Obj_Load_Options {
-	int load_flags;
+    int load_flags;
 };
 
 Obj_Mesh * obj_mesh_load(const char * filename, const Obj_Load_Options * options);

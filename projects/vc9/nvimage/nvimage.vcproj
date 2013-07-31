@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../..\../src,../../..\../extern/poshlib,../../..\../extern/stb"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib,../../../extern/stb"
 				PreprocessorDefinitions="_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../..,../../../../src,../../..\../extern/poshlib,../../..\../extern/stb"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib,../../../extern/stb"
 				PreprocessorDefinitions="_DEBUG"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -175,7 +175,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\..,..\../..\../src,..\../..\../extern/poshlib,..\../..\../extern/stb"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib,../../../extern/stb"
 				PreprocessorDefinitions="NDEBUG"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -246,7 +246,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..,..\../..\../src,..\../..\../extern/poshlib,..\../..\../extern/stb"
+				AdditionalIncludeDirectories="../../..,../../../src,../../../extern/poshlib,../../../extern/stb"
 				PreprocessorDefinitions="NDEBUG"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -290,11 +290,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\..\..\..\src\nvimage\BitMap.cpp"
+			RelativePath="..\..\..\src\nvimage\BitMap.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\..\..\src\nvimage\BitMap.h"
+			RelativePath="..\..\..\src\nvimage\BitMap.h"
 			>
 		</File>
 	</Files>
