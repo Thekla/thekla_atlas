@@ -47,8 +47,6 @@ struct Atlas_Options {
             int texel_padding; 
         } witness;
     } packer_options;
-    //float * packer_options;
-    //int packer_option_count;
 };
 
 struct Atlas_Input_Vertex {
@@ -98,9 +96,6 @@ void atlas_set_default_options(Atlas_Options * options);
 Atlas_Output_Mesh * atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error);
 
 void atlas_free(Atlas_Output_Mesh * output);
-
-
-//extern "C" Atlas_Input_Mesh * mesh_read_obj(const char * file_name);
 
 
 /*
