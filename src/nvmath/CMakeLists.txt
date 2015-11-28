@@ -5,23 +5,16 @@ SET(MATH_SRCS
 	Vector.h
 	Matrix.h
 	Quaternion.h
+	ConvexHull.h ConvexHull.cpp
 	Plane.h Plane.cpp
 	Box.h
-	Color.h
-	Frustum.h Frustum.cpp
-	Montecarlo.h Montecarlo.cpp
-	Random.h Random.cpp
-	SphericalHarmonic.h SphericalHarmonic.cpp
 	Basis.h Basis.cpp
-	Triangle.h Triangle.cpp TriBox.cpp
-	Polygon.h Polygon.cpp
 	TypeSerialization.h TypeSerialization.cpp
+	Random.h Random.cpp
 	Sparse.h Sparse.cpp
 	Solver.h Solver.cpp
 	KahanSum.h
-	Half.h Half.cpp
-	Fitting.h Fitting.cpp
-	Bezier.h Bezier.cpp)
+	Fitting.h Fitting.cpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
