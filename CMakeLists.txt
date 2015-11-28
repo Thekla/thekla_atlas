@@ -7,6 +7,7 @@ add_definitions(
 include_directories(
     src
     src/nvcore
+    extern/tinyobj
     extern/poshlib)
 
 add_subdirectory(extern/poshlib)

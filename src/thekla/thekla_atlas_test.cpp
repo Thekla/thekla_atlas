@@ -42,6 +42,9 @@ int main(int argc, char * argv[]) {
     Atlas_Error error = Atlas_Error_Success;
     Atlas_Output_Mesh * output_mesh = atlas_generate(&input_mesh, &atlas_options, &error);
 
+    printf("Atlas mesh has %d verts\n", output_mesh->vertex_count);
+    printf("Atlas mesh has %d triangles\n", output_mesh->index_count / 3);
+    printf("Produced debug_packer_final.tga\n");
 
     // Free meshes.
     obj_mesh_free(obj_mesh);
