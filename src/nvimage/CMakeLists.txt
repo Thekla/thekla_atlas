@@ -2,8 +2,7 @@ PROJECT(nvimage)
 
 SET(IMAGE_SRCS	
 	nvimage.h
-	BitMap.h BitMap.cpp
-	HoleFilling.h HoleFilling.cpp)
+	BitMap.h BitMap.cpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 

@@ -20,8 +20,6 @@ SET(MESH_SRCS
 	halfedge/Face.cpp
 	halfedge/Vertex.h
 	halfedge/Vertex.cpp
-	export/MeshExportOBJ.h
-	export/MeshExportOBJ.cpp
 	geometry/Bounds.h
 	geometry/Bounds.cpp
 	geometry/Measurements.h
