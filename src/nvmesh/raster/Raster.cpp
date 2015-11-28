@@ -571,19 +571,19 @@ bool nv::Raster::drawLine(bool antialias, Vector2::Arg extents, bool enableSciss
     // Degenerate line.
     if (dx == 0 && dy == 0) return true;
 
-    if (abs(dx) >= abs(dy)) {
-        n = iround(abs(dx));
-        dp.x = dx / abs(dx);
-        dp.y = dy / abs(dx);
-        nvDebugCheck(abs(dp.y) <= 1.0f);
+    if (fabs(dx) >= fabs(dy)) {
+        n = iround(fabs(dx));
+        dp.x = dx / fabs(dx);
+        dp.y = dy / fabs(dx);
+        nvDebugCheck(fabs(dp.y) <= 1.0f);
         dpdy.x = 0;
         dpdy.y = 1;
     }
     else {
-        n = iround(abs(dy));
-        dp.x = dx / abs(dy);
-        dp.y = dy / abs(dy);
-        nvDebugCheck(abs(dp.x) <= 1.0f);
+        n = iround(fabs(dy));
+        dp.x = dx / fabs(dy);
+        dp.y = dy / fabs(dy);
+        nvDebugCheck(fabs(dp.x) <= 1.0f);
         dpdy.x = 1;
         dpdy.y = 0;
     }
