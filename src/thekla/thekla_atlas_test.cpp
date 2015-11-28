@@ -8,11 +8,16 @@
 
 using namespace Thekla;
 
-int main() {
+int main(int argc, char * argv[]) {
+
+    if (argc != 2) {
+        printf("Usage: %s input_file.obj\n", argv[0]);
+        return EXIT_FAILURE;
+    }
 
     // Load Obj_Mesh.
     Obj_Load_Options load_options = {0};
-    Obj_Mesh * obj_mesh = obj_mesh_load("test.obj", &load_options);
+    Obj_Mesh * obj_mesh = obj_mesh_load(argv[1], &load_options);
 
     if (obj_mesh == NULL) {
         printf("Error loading obj file.\n");
