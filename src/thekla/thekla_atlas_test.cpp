@@ -38,7 +38,10 @@ int main(int argc, char * argv[]) {
     // Generate Atlas_Output_Mesh.
     Atlas_Options atlas_options;
     atlas_set_default_options(&atlas_options);
-    
+
+    // Avoid brute force packing, since it can be unusably slow in some situations.
+    atlas_options.packer_options.witness.packing_quality = 1;
+
     Atlas_Error error = Atlas_Error_Success;
     Atlas_Output_Mesh * output_mesh = atlas_generate(&input_mesh, &atlas_options, &error);
 
