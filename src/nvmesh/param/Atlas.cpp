@@ -547,7 +547,7 @@ float Atlas::packCharts(int quality, float texelArea, int padding)
 
 
 
-Chart::Chart() : m_chartMesh(NULL), m_unifiedMesh(NULL), m_isDisk(false)
+Chart::Chart() : m_chartMesh(NULL), m_unifiedMesh(NULL), m_isDisk(false), scale(1)
 {
 }
 
