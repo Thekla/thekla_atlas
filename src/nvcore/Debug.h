@@ -159,16 +159,6 @@ NVCORE_API void NV_CDECL nvDebugPrint( const char *msg, ... ) __attribute__((for
 namespace nv
 {
     inline bool isValidPtr(const void * ptr) {
-    #if NV_CPU_X86_64
-        if (ptr == NULL) return true;
-        if (reinterpret_cast<uint64>(ptr) < 0x10000ULL) return false;
-        if (reinterpret_cast<uint64>(ptr) >= 0x000007FFFFFEFFFFULL) return false;
-    #else
-	    if (reinterpret_cast<uint32>(ptr) == 0xcccccccc) return false;
-	    if (reinterpret_cast<uint32>(ptr) == 0xcdcdcdcd) return false;
-	    if (reinterpret_cast<uint32>(ptr) == 0xdddddddd) return false;
-	    if (reinterpret_cast<uint32>(ptr) == 0xffffffff) return false;
-    #endif
         return true;
     }
 
