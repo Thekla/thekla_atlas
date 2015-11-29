@@ -983,6 +983,8 @@ void NV_CDECL nvDebugPrint(const char *msg, ...)
     va_start(arg,msg);
     if (s_message_handler != NULL) {
         s_message_handler->log( msg, arg );
+    } else {
+        vprintf(msg, arg);
     }
     va_end(arg);
 }
