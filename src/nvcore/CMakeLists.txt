@@ -1,5 +1,4 @@
 PROJECT(nvcore)
-ADD_SUBDIRECTORY(poshlib)
 
 SET(CORE_SRCS
 	nvcore.h
@@ -9,37 +8,19 @@ SET(CORE_SRCS
 	DefsVcWin32.h
 	Ptr.h
 	RefCounted.h
-	RefCounted.cpp
 	BitArray.h
 	Memory.h
 	Memory.cpp
 	Debug.h
 	Debug.cpp
-	Containers.h
 	StrLib.h
 	StrLib.cpp
 	Stream.h
 	StdStream.h
-	TextReader.h
-	TextReader.cpp
-	TextWriter.h
-	TextWriter.cpp
-	Tokenizer.h
-	Tokenizer.cpp
-	Radix.h
-	Radix.cpp
-	Radix3.h
-	Radix3.cpp
-	CpuInfo.h
-	CpuInfo.cpp
-	Algorithms.h
-	Timer.h
-	Library.h
-	Library.cpp
 	FileSystem.h
 	FileSystem.cpp
-	Array2D.h
-	Array2D.cpp)
+	RadixSort.h
+	RadixSort.cpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 

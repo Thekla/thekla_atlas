@@ -64,13 +64,14 @@
 #           include <cxxabi.h>
 #       endif
 #   endif
+#   define NV_USE_SEPARATE_THREAD 0
+#else
+#   define NV_USE_SEPARATE_THREAD 1
 #endif
 
 #if NV_OS_ORBIS
 #include <libdbg.h>
 #endif
-
-#define NV_USE_SEPARATE_THREAD 1
 
 
 using namespace nv;
@@ -942,6 +943,7 @@ void debug::terminate(int code)
 #elif NV_OS_LINUX
     // TODO(casey): If anyone ever implements the iOS/Orbis
     // versions, then we should probably implement a Linux one too :)
+#elif NV_OS_DARWIN
 #else
     EnterCriticalSection(&s_handler_critical_section);
 
@@ -981,6 +983,8 @@ void NV_CDECL nvDebugPrint(const char *msg, ...)
     va_start(arg,msg);
     if (s_message_handler != NULL) {
         s_message_handler->log( msg, arg );
+    } else {
+        vprintf(msg, arg);
     }
     va_end(arg);
 }

@@ -1,6 +1,8 @@
 
 #include "thekla_atlas.h"
 
+#include <cfloat>
+
 #include "nvmesh/halfedge/Edge.h"
 #include "nvmesh/halfedge/Mesh.h"
 #include "nvmesh/halfedge/Face.h"
@@ -128,7 +130,7 @@ static Atlas_Output_Mesh * mesh_atlas_to_output(const HalfEdge::Mesh * mesh, con
 }
 
 
-void atlas_set_default_options(Atlas_Options * options) {
+void Thekla::atlas_set_default_options(Atlas_Options * options) {
     if (options != NULL) {
         // These are the default values we use on The Witness.
 
@@ -151,7 +153,7 @@ void atlas_set_default_options(Atlas_Options * options) {
 }
 
 
-Atlas_Output_Mesh * atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error) {
+Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error) {
     // Validate args.
     if (input == NULL || options == NULL || error == NULL) return set_error(error, Atlas_Error_Invalid_Args);
 
@@ -243,7 +245,7 @@ Atlas_Output_Mesh * atlas_generate(const Atlas_Input_Mesh * input, const Atlas_O
 }
 
 
-void atlas_free(Atlas_Output_Mesh * output) {
+void Thekla::atlas_free(Atlas_Output_Mesh * output) {
     if (output != NULL) {
         delete [] output->vertex_array;
         delete [] output->index_array;

@@ -2,21 +2,7 @@ PROJECT(nvimage)
 
 SET(IMAGE_SRCS	
 	nvimage.h
-	BitMap.h BitMap.cpp
-	BlockDXT.h BlockDXT.cpp
-	ColorBlock.h ColorBlock.cpp
-	ColorSpace.h ColorSpace.cpp
-	DirectDrawSurface.h DirectDrawSurface.cpp
-	FloatImage.h FloatImage.cpp
-	Filter.h Filter.cpp
-	HoleFilling.h HoleFilling.cpp
-	Image.h Image.cpp
-	ImageIO.h ImageIO.cpp
-	NormalMap.h NormalMap.cpp
-	NormalMipmap.h NormalMipmap.cpp
-	PsdFile.h
-	Quantize.h Quantize.cpp
-	TgaFile.h)
+	BitMap.h BitMap.cpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
