@@ -1,23 +1,17 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "thekla_atlas", "thekla_atlas\thekla_atlas.vcproj", "{EF943121-21F5-44B6-A8B5-C628F95CE070}"
-	ProjectSection(ProjectDependencies) = postProject
-		{42FA3213-9A92-455E-8F39-5500B2303CCD} = {42FA3213-9A92-455E-8F39-5500B2303CCD}
-		{3943D773-05FE-43E7-A122-F5E534F73D33} = {3943D773-05FE-43E7-A122-F5E534F73D33}
-		{D8B7F575-E8F5-4F1A-A4A4-EB9CC9A0766B} = {D8B7F575-E8F5-4F1A-A4A4-EB9CC9A0766B}
-		{AACBE57F-FF9D-4D15-86DD-A30232EB9102} = {AACBE57F-FF9D-4D15-86DD-A30232EB9102}
-	EndProjectSection
-EndProject
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nv", "nv", "{382CF634-AF73-4943-83D6-C1D5BA499CC2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvcore", "nvcore\nvcore.vcproj", "{42FA3213-9A92-455E-8F39-5500B2303CCD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "thekla_atlas", "thekla_atlas\thekla_atlas.vcxproj", "{EF943121-21F5-44B6-A8B5-C628F95CE070}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvmath", "nvmath\nvmath.vcproj", "{D8B7F575-E8F5-4F1A-A4A4-EB9CC9A0766B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvcore", "nvcore\nvcore.vcxproj", "{42FA3213-9A92-455E-8F39-5500B2303CCD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvmesh", "nvmesh\nvmesh.vcproj", "{3943D773-05FE-43E7-A122-F5E534F73D33}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvmath", "nvmath\nvmath.vcxproj", "{D8B7F575-E8F5-4F1A-A4A4-EB9CC9A0766B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvimage", "nvimage\nvimage.vcproj", "{AACBE57F-FF9D-4D15-86DD-A30232EB9102}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvmesh", "nvmesh\nvmesh.vcxproj", "{3943D773-05FE-43E7-A122-F5E534F73D33}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvimage", "nvimage\nvimage.vcxproj", "{AACBE57F-FF9D-4D15-86DD-A30232EB9102}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

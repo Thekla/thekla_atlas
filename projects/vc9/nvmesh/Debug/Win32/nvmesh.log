@@ -1,0 +1,47 @@
+﻿Build started 2016/2/20 14:34:48.
+     1>Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvmesh\nvmesh.vcxproj" on node 2 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I../../.. /I../../../src /I../../../src/nvmesh /I../../../extern/poshlib /Zi /nologo /W3 /WX- /Od /Oy- /D _DEBUG /D _MBCS /GF /Gm /MTd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\Win32\\" /Fd"Debug\Win32\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\src\nvmesh\geometry\Measurements.cpp ..\..\..\src\nvmesh\halfedge\Edge.cpp ..\..\..\src\nvmesh\halfedge\Face.cpp ..\..\..\src\nvmesh\halfedge\Mesh.cpp ..\..\..\src\nvmesh\halfedge\Vertex.cpp ..\..\..\src\nvmesh\param\Atlas.cpp ..\..\..\src\nvmesh\param\AtlasBuilder.cpp ..\..\..\src\nvmesh\param\AtlasPacker.cpp ..\..\..\src\nvmesh\param\LeastSquaresConformalMap.cpp ..\..\..\src\nvmesh\param\OrthogonalProjectionMap.cpp ..\..\..\src\nvmesh\param\ParameterizationQuality.cpp ..\..\..\src\nvmesh\param\SingleFaceMap.cpp ..\..\..\src\nvmesh\param\Util.cpp ..\..\..\src\nvmesh\raster\Raster.cpp ..\..\..\src\nvmesh\MeshBuilder.cpp ..\..\..\src\nvmesh\MeshTopology.cpp ..\..\..\src\nvmesh\nvmesh.cpp
+         nvmesh.cpp
+         MeshTopology.cpp
+         MeshBuilder.cpp
+         Raster.cpp
+         Util.cpp
+         SingleFaceMap.cpp
+         ParameterizationQuality.cpp
+         OrthogonalProjectionMap.cpp
+         LeastSquaresConformalMap.cpp
+         AtlasPacker.cpp
+         AtlasBuilder.cpp
+     1>D:\Users\renc\Documents\GitHub\thekla_atlas\src\nvmath/Matrix.inl : warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+         Atlas.cpp
+         Vertex.cpp
+         Mesh.cpp
+         Face.cpp
+         Edge.cpp
+         Measurements.cpp
+         Generating Code...
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\Lib.exe /OUT:"Debug\Win32\nvmesh.lib" /NOLOGO Debug\Win32\Measurements.obj
+         Debug\Win32\Edge.obj
+         Debug\Win32\Face.obj
+         Debug\Win32\Mesh.obj
+         Debug\Win32\Vertex.obj
+         Debug\Win32\Atlas.obj
+         Debug\Win32\AtlasBuilder.obj
+         Debug\Win32\AtlasPacker.obj
+         Debug\Win32\LeastSquaresConformalMap.obj
+         Debug\Win32\OrthogonalProjectionMap.obj
+         Debug\Win32\ParameterizationQuality.obj
+         Debug\Win32\SingleFaceMap.obj
+         Debug\Win32\Util.obj
+         Debug\Win32\Raster.obj
+         Debug\Win32\MeshBuilder.obj
+         Debug\Win32\MeshTopology.obj
+         Debug\Win32\nvmesh.obj
+         nvmesh.vcxproj -> D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvmesh\Debug\Win32\nvmesh.lib
+     1>Done Building Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvmesh\nvmesh.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:05.68

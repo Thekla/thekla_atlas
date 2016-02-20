@@ -1,0 +1,37 @@
+﻿Build started 2016/2/20 14:34:48.
+     1>Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvmath\nvmath.vcxproj" on node 3 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I../../.. /I../../../src /I../../../extern/poshlib /Zi /nologo /W3 /WX- /Od /Oy- /D _DEBUG /D _MBCS /GF /Gm /MTd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\Win32\\" /Fd"Debug\Win32\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\src\nvmath\Basis.cpp ..\..\..\src\nvmath\Box.cpp ..\..\..\src\nvmath\ConvexHull.cpp ..\..\..\src\nvmath\Fitting.cpp ..\..\..\src\nvmath\Matrix.cpp ..\..\..\src\nvmath\Plane.cpp ..\..\..\src\nvmath\Random.cpp ..\..\..\src\nvmath\Solver.cpp ..\..\..\src\nvmath\Sparse.cpp ..\..\..\src\nvmath\Sphere.cpp ..\..\..\src\nvmath\TypeSerialization.cpp
+         TypeSerialization.cpp
+         Sphere.cpp
+         Sparse.cpp
+         Solver.cpp
+     1>..\..\..\src\nvmath\Solver.cpp : warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+         Random.cpp
+         Plane.cpp
+     1>d:\users\renc\documents\github\thekla_atlas\src\nvmath\Matrix.inl : warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+         Matrix.cpp
+     1>d:\users\renc\documents\github\thekla_atlas\src\nvmath\Matrix.inl : warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+         Fitting.cpp
+         ConvexHull.cpp
+         Box.cpp
+         Basis.cpp
+         Generating Code...
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\Lib.exe /OUT:"Debug\Win32\nvmath.lib" /NOLOGO Debug\Win32\Basis.obj
+         Debug\Win32\Box.obj
+         Debug\Win32\ConvexHull.obj
+         Debug\Win32\Fitting.obj
+         Debug\Win32\Matrix.obj
+         Debug\Win32\Plane.obj
+         Debug\Win32\Random.obj
+         Debug\Win32\Solver.obj
+         Debug\Win32\Sparse.obj
+         Debug\Win32\Sphere.obj
+         Debug\Win32\TypeSerialization.obj
+         nvmath.vcxproj -> D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvmath\Debug\Win32\nvmath.lib
+     1>Done Building Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvmath\nvmath.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.37
