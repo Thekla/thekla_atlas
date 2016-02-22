@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="geometry">
+      <UniqueIdentifier>{e365b548-42de-4f0e-832c-e47952790dfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="halfedge">
+      <UniqueIdentifier>{63177e11-600d-4899-8f1c-dc81e9574e57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="param">
+      <UniqueIdentifier>{a3b3d110-e535-47e0-80b6-da7e1bbec1fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="raster">
+      <UniqueIdentifier>{12fce0dd-a230-498f-862d-f257ffb4ae9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="weld">
+      <UniqueIdentifier>{caa7ac4e-2eb5-423d-aba0-f207d889faa0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\nvmesh\geometry\Measurements.cpp">
+      <Filter>geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\halfedge\Edge.cpp">
+      <Filter>halfedge</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\halfedge\Face.cpp">
+      <Filter>halfedge</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\halfedge\Mesh.cpp">
+      <Filter>halfedge</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\halfedge\Vertex.cpp">
+      <Filter>halfedge</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\Atlas.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\AtlasBuilder.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\AtlasPacker.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\BoundaryMap.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\ConformalMap.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\LeastSquaresConformalMap.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\OrthogonalProjectionMap.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\ParameterizationQuality.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\SingleFaceMap.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\param\Util.cpp">
+      <Filter>param</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\raster\Raster.cpp">
+      <Filter>raster</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\nvmesh\MeshBuilder.cpp" />
+    <ClCompile Include="..\..\..\src\nvmesh\MeshTopology.cpp" />
+    <ClCompile Include="..\..\..\src\nvmesh\nvmesh.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\nvmesh\geometry\Measurements.h">
+      <Filter>geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\halfedge\Edge.h">
+      <Filter>halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\halfedge\Face.h">
+      <Filter>halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\halfedge\Mesh.h">
+      <Filter>halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\halfedge\Vertex.h">
+      <Filter>halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\Atlas.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\AtlasBuilder.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\AtlasPacker.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\LeastSquaresConformalMap.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\OrthogonalProjectionMap.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\ParameterizationQuality.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\SingleFaceMap.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\param\Util.h">
+      <Filter>param</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\raster\ClippedTriangle.h">
+      <Filter>raster</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\raster\Raster.h">
+      <Filter>raster</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\weld\Weld.h">
+      <Filter>weld</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\nvmesh\MeshBuilder.h" />
+    <ClInclude Include="..\..\..\src\nvmesh\nvmesh.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\..\src\nvmesh\param\BoundaryMap.h">
+      <Filter>param</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\src\nvmesh\param\ConformalMap.h">
+      <Filter>param</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\src\nvmesh\MeshTopology.h" />
+  </ItemGroup>
+</Project>

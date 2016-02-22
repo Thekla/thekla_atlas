@@ -1,0 +1,13 @@
+﻿Build started 2016/2/20 14:34:48.
+     1>Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvimage\nvimage.vcxproj" on node 5 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I../../.. /I../../../src /I../../../extern/poshlib /I../../../extern/stb /Zi /nologo /W3 /WX- /Od /Oy- /D _DEBUG /D _MBCS /GF /Gm /MTd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\Win32\\" /Fd"Debug\Win32\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\src\nvimage\BitMap.cpp
+         BitMap.cpp
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\Lib.exe /OUT:"Debug\Win32\nvimage.lib" /NOLOGO Debug\Win32\BitMap.obj
+         nvimage.vcxproj -> D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvimage\Debug\Win32\nvimage.lib
+     1>Done Building Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvimage\nvimage.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.79

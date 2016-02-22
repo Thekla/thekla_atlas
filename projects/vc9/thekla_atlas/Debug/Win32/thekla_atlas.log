@@ -1,0 +1,13 @@
+﻿Build started 2016/2/20 14:34:54.
+     1>Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\thekla_atlas\thekla_atlas.vcxproj" on node 2 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I../../.. /I../../../src /I../../../extern/poshlib /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D THEKLA_ATLAS_EXPORTS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\Win32\\" /Fd"Debug\Win32\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\src\thekla\thekla_atlas.cpp ..\..\..\src\thekla\thekla_atlas_test.cpp
+         thekla_atlas_test.cpp
+     1>d:\users\renc\documents\github\thekla_atlas\src\thekla\thekla_mesh_load.h(5): fatal error C1083: Cannot open include file: 'tiny_obj_loader.h': No such file or directory
+         thekla_atlas.cpp
+         Generating Code...
+     1>Done Building Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\thekla_atlas\thekla_atlas.vcxproj" (Rebuild target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.47

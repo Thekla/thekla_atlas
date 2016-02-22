@@ -1,0 +1,26 @@
+﻿Build started 2016/2/20 14:34:48.
+     1>Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvcore\nvcore.vcxproj" on node 4 (Rebuild target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I../.. /I../../../src /I../../../extern/poshlib /Zi /nologo /W3 /WX- /Od /Oy- /D _DEBUG /D _MBCS /GF /Gm /MTd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\Win32\\" /Fd"Debug\Win32\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\..\src\nvcore\Debug.cpp ..\..\..\src\nvcore\FileSystem.cpp ..\..\..\src\nvcore\RadixSort.cpp ..\..\..\src\nvcore\StrLib.cpp
+         StrLib.cpp
+         RadixSort.cpp
+         FileSystem.cpp
+         Debug.cpp
+         Generating Code...
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I../.. /I../../../src /I../../../extern/poshlib /Zi /nologo /W3 /WX- /Od /Oy- /D _DEBUG /D _MBCS /GF /Gm /MTd /GS /Zc:wchar_t /Zc:forScope /Fo"Debug\Win32\\" /Fd"Debug\Win32\vc110.pdb" /Gd /TC /analyze- /errorReport:prompt ..\..\..\extern\poshlib\posh.c ..\..\..\src\nvcore\scanf.c
+         scanf.c
+         posh.c
+         Generating Code...
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\Lib.exe /OUT:"Debug\Win32\nvcore.lib" /NOLOGO Debug\Win32\Debug.obj
+         Debug\Win32\FileSystem.obj
+         Debug\Win32\posh.obj
+         Debug\Win32\RadixSort.obj
+         Debug\Win32\scanf.obj
+         Debug\Win32\StrLib.obj
+         nvcore.vcxproj -> D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvcore\Debug\Win32\nvcore.lib
+     1>Done Building Project "D:\Users\renc\Documents\GitHub\thekla_atlas\projects\vc9\nvcore\nvcore.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.59
