@@ -297,6 +297,14 @@
 			RelativePath="..\..\..\src\nvimage\BitMap.h"
 			>
 		</File>
+		<File
+			RelativePath="..\..\..\src\nvimage\Image.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvimage\Image.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

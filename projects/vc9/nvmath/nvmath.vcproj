@@ -323,6 +323,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\..\src\nvmath\Color.h"
+			>
+		</File>
+		<File
 			RelativePath="..\..\..\src\nvmath\ConvexHull.cpp"
 			>
 		</File>
@@ -339,6 +343,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\..\src\nvmath\ftoi.h"
+			>
+		</File>
+		<File
 			RelativePath="..\..\..\src\nvmath\KahanSum.h"
 			>
 		</File>
@@ -348,6 +356,10 @@
 		</File>
 		<File
 			RelativePath="..\..\..\src\nvmath\Matrix.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\Morton.h"
 			>
 		</File>
 		<File
@@ -368,6 +380,14 @@
 		</File>
 		<File
 			RelativePath="..\..\..\src\nvmath\Plane.inl"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\ProximityGrid.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\src\nvmath\ProximityGrid.h"
 			>
 		</File>
 		<File
