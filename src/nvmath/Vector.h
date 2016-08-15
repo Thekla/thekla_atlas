@@ -73,6 +73,7 @@ namespace nv
         void operator*=(float s);
         void operator/=(float s);
         void operator*=(Vector3::Arg v);
+        void operator/=(Vector3::Arg v);
 
         friend bool operator==(Vector3::Arg a, Vector3::Arg b);
         friend bool operator!=(Vector3::Arg a, Vector3::Arg b);
@@ -116,7 +117,9 @@ namespace nv
         void operator+=(Vector4::Arg v);
         void operator-=(Vector4::Arg v);
         void operator*=(float s);
+        void operator/=(float s);
         void operator*=(Vector4::Arg v);
+        void operator/=(Vector4::Arg v);
 
         friend bool operator==(Vector4::Arg a, Vector4::Arg b);
         friend bool operator!=(Vector4::Arg a, Vector4::Arg b);
@@ -141,6 +144,6 @@ namespace nv
 // Instead we simply have explicit casts:
 template <typename T> T to(const nv::Vector2 & v) { NV_COMPILER_CHECK(sizeof(T) == sizeof(nv::Vector2)); return T(v.x, v.y); }
 template <typename T> T to(const nv::Vector3 & v) { NV_COMPILER_CHECK(sizeof(T) == sizeof(nv::Vector3)); return T(v.x, v.y, v.z); }
-template <typename T> T to(const nv::Vector4 & v) { NV_COMPILER_CHECK(sizeof(T) == sizeof(nv::Vector4)); return T(v.x, v.y, v.z, v.z); }
+template <typename T> T to(const nv::Vector4 & v) { NV_COMPILER_CHECK(sizeof(T) == sizeof(nv::Vector4)); return T(v.x, v.y, v.z, v.w); }
 
 #endif // NV_MATH_VECTOR_H

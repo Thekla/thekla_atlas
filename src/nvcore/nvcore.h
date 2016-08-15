@@ -53,6 +53,7 @@
 #   define NV_OS_MINGW 1
 #   define NV_OS_WIN32 1
 #elif defined POSH_OS_OSX
+#   define NV_OS_OSX 1      // IC: Adding this, because iOS defines NV_OS_DARWIN too.
 #   define NV_OS_DARWIN 1
 #   define NV_OS_UNIX 1
 #elif defined POSH_OS_IOS
@@ -61,22 +62,31 @@
 #   define NV_OS_IOS 1
 #elif defined POSH_OS_UNIX
 #   define NV_OS_UNIX 1
+#elif defined POSH_OS_WIN64
+#   define NV_OS_WIN32 1
+#   define NV_OS_WIN64 1
 #elif defined POSH_OS_WIN32
 #   define NV_OS_WIN32 1
-#elif defined POSH_OS_WIN64
-#   define NV_OS_WIN64 1
 #elif defined POSH_OS_XBOX
 #   define NV_OS_XBOX 1
+#elif defined POSH_OS_DURANGO
+#   define NV_OS_DURANGO 1
 #else
 #   error "Unsupported OS"
 #endif
+
+
+// Is this a console OS? (i.e. connected to a TV)
+#if NV_OS_ORBIS || NV_OS_XBOX || NV_OS_DURANGO
+#   define NV_OS_CONSOLE 1
+#endif 
 
 
 // Threading:
 // some platforms don't implement __thread or similar for thread-local-storage
 #if NV_OS_UNIX || NV_OS_ORBIS || NV_OS_IOS //ACStodoIOS darwin instead of ios?
 #   define NV_OS_USE_PTHREAD 1
-#   if NV_OS_DARWIN || NV_OS_IOS
+#   if NV_OS_IOS
 #       define NV_OS_HAS_TLS_QUALIFIER 0
 #   else
 #       define NV_OS_HAS_TLS_QUALIFIER 1
@@ -96,6 +106,7 @@
 #define NV_CPU_STRING   POSH_CPU_STRING
 
 #if defined POSH_CPU_X86_64
+//#   define NV_CPU_X86 1
 #   define NV_CPU_X86_64 1
 #elif defined POSH_CPU_X86
 #   define NV_CPU_X86 1
@@ -127,6 +138,17 @@
 #   error "Unsupported compiler"
 #endif
 
+#if NV_CC_MSVC
+#define NV_CC_CPP11 (__cplusplus > 199711L || _MSC_VER >= 1800) // Visual Studio 2013 has all the features we use, but doesn't advertise full C++11 support yet.
+#else
+// @@ IC: This works in CLANG, about GCC?
+// @@ ES: Doesn't work in gcc. These 3 features are available in GCC >= 4.4.
+#ifdef __clang__
+#define NV_CC_CPP11 (__has_feature(cxx_deleted_functions) && __has_feature(cxx_rvalue_references) && __has_feature(cxx_static_assert))
+#elif defined __GNUC__ 
+#define NV_CC_CPP11 ( __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
+#endif
+#endif
 
 // Endiannes:
 #define NV_LITTLE_ENDIAN    POSH_LITTLE_ENDIAN
@@ -145,6 +167,28 @@
 // cmake config
 #include "nvconfig.h"
 
+#if NV_OS_DARWIN
+#include <stdint.h>
+//#include <inttypes.h>
+
+// Type definitions:
+typedef uint8_t     uint8;
+typedef int8_t      int8;
+
+typedef uint16_t    uint16;
+typedef int16_t     int16;
+
+typedef uint32_t    uint32;
+typedef int32_t     int32;
+
+typedef uint64_t    uint64;
+typedef int64_t     int64;
+
+// POSH gets this wrong due to __LP64__
+#undef POSH_I64_PRINTF_PREFIX
+#define POSH_I64_PRINTF_PREFIX "ll"
+
+#else
 
 // Type definitions:
 typedef posh_u8_t   uint8;
@@ -156,8 +200,23 @@ typedef posh_i16_t  int16;
 typedef posh_u32_t  uint32;
 typedef posh_i32_t  int32;
 
+//#if NV_OS_DARWIN
+// OSX-64 is supposed to be LP64 (longs and pointers are 64 bits), thus uint64 is defined as 
+// unsigned long. However, some OSX headers define it as unsigned long long, producing errors,
+// even though both types are 64 bit. Ideally posh should handle that, but it has not been
+// updated in ages, so here I'm just falling back to the standard C99 types defined in inttypes.h
+//#include <inttypes.h>
+//typedef posh_u64_t  uint64_t;
+//typedef posh_i64_t  int64_t;
+//#else
 typedef posh_u64_t  uint64;
 typedef posh_i64_t  int64;
+//#endif
+#if NV_OS_DARWIN
+// To avoid duplicate definitions.
+#define _UINT64
+#endif
+#endif
 
 // Aliases
 typedef uint32      uint;
@@ -170,11 +229,16 @@ typedef uint32      uint;
 
 
 // Disable copy constructor and assignment operator. 
+#if NV_CC_CPP11
+#define NV_FORBID_COPY(C) \
+    C( const C & ) = delete; \
+    C &operator=( const C & ) = delete
+#else
 #define NV_FORBID_COPY(C) \
     private: \
     C( const C & ); \
     C &operator=( const C & )
-
+#endif
 
 // Disable dynamic allocation on the heap. 
 // See Prohibiting Heap-Based Objects in More Effective C++.
@@ -205,8 +269,8 @@ typedef uint32      uint;
 #define NV_MULTI_LINE_MACRO_END } while(false)
 #endif
 
-#if __cplusplus > 199711L
-#define nvStaticCheck(x) static_assert(x, "Static assert "#x" failed")
+#if NV_CC_CPP11
+#define nvStaticCheck(x) static_assert((x), "Static assert "#x" failed")
 #else
 #define nvStaticCheck(x) typedef char NV_STRING_JOIN2(__static_assert_,__LINE__)[(x)]
 #endif
@@ -222,8 +286,10 @@ NV_COMPILER_CHECK(sizeof(uint32) == 4);
 NV_COMPILER_CHECK(sizeof(int32) == 4);
 NV_COMPILER_CHECK(sizeof(uint32) == 4);
 
-
-#define NV_ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
+#include <stddef.h> // for size_t
+template <typename T, size_t N> char (&ArraySizeHelper(T (&array)[N]))[N];
+#define NV_ARRAY_SIZE(x) sizeof(ArraySizeHelper(x))
+//#define NV_ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
 
 #if 0 // Disabled in The Witness.
 #if NV_CC_MSVC
@@ -246,7 +312,11 @@ NV_COMPILER_CHECK(sizeof(uint32) == 4);
     }
 
 // Indicate the compiler that the parameter is not used to suppress compier warnings.
+#if NV_CC_MSVC
 #define NV_UNUSED(a) ((a)=(a))
+#else
+#define NV_UNUSED(a) _Pragma(NV_STRING(unused(a)))
+#endif
 
 // Null index. @@ Move this somewhere else... it's only used by nvmesh.
 //const unsigned int NIL = unsigned int(~0);
@@ -263,6 +333,8 @@ NV_COMPILER_CHECK(sizeof(uint32) == 4);
 #       include "DefsVcWin32.h"
 #   elif NV_OS_XBOX
 #       include "DefsVcXBox.h"
+#   elif NV_OS_DURANGO
+#       include "DefsVcDurango.h"
 #   else
 #       error "MSVC: Platform not supported"
 #   endif

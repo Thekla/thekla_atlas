@@ -4,11 +4,16 @@
 #ifndef NV_MESH_ATLASBUILDER_H
 #define NV_MESH_ATLASBUILDER_H
 
-#include "nvcore/Array.h"
+#include "Atlas.h"
+
 #include "nvmath/Vector.h"
 #include "nvmath/Random.h"
 #include "nvmesh/nvmesh.h"
-#include "Atlas.h"
+
+#include "nvcore/Array.h"
+#include "nvcore/BitArray.h"
+
+
 
 namespace nv
 {
@@ -16,20 +21,22 @@ namespace nv
 
     struct ChartBuildData;
 
-	struct AtlasBuilder
-	{
-		AtlasBuilder(const HalfEdge::Mesh * m);
-		~AtlasBuilder();
+    struct AtlasBuilder
+    {
+        AtlasBuilder(const HalfEdge::Mesh * m);
+        ~AtlasBuilder();
+
+        void markUnchartedFaces(const Array<uint> & unchartedFaces);
 
         void computeShortestPaths();
 
-		void placeSeeds(float threshold, uint maxSeedCount);
+        void placeSeeds(float threshold, uint maxSeedCount);
         void createRandomChart(float threshold);
 
         void addFaceToChart(ChartBuildData * chart, uint f, bool recomputeProxy=false);
 
-		bool growCharts(float threshold, uint faceCount);
-		bool growChart(ChartBuildData * chart, float threshold, uint faceCount);
+        bool growCharts(float threshold, uint faceCount);
+        bool growChart(ChartBuildData * chart, float threshold, uint faceCount);
 
         void resetCharts();
 
@@ -58,7 +65,7 @@ namespace nv
         float evaluateBoundaryLength(ChartBuildData * chart, uint f);
         Vector3 evaluateChartNormalSum(ChartBuildData * chart, uint f);
         Vector3 evaluateChartCentroidSum(ChartBuildData * chart, uint f);
-        
+
         Vector3 computeChartCentroid(const ChartBuildData * chart);
 
 
@@ -82,10 +89,10 @@ namespace nv
         uint chartCount() const { return chartArray.count(); }
         const Array<uint> & chartFaces(uint i) const;
 
-		const HalfEdge::Mesh * mesh;
-		uint facesLeft;
-        Array<uint> faceChartArray;
-		Array<ChartBuildData *> chartArray;
+        const HalfEdge::Mesh * mesh;
+        uint facesLeft;
+        Array<int> faceChartArray;
+        Array<ChartBuildData *> chartArray;
         Array<float> shortestPaths;
 
         Array<float> edgeLengths;
@@ -97,7 +104,7 @@ namespace nv
         MTRand rand;
 
         SegmentationSettings settings;
-	};
+    };
 
 } // nv namespace
 

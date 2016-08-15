@@ -215,8 +215,15 @@ uint MeshBuilder::addColor(const Vector4 & v, uint set/*=0*/)
     return d->colArray[set].count() - 1;
 }
 
-//void MeshBuilder::beginGroup(uint id);
-//void MeshBuilder::endGroup();
+void MeshBuilder::beginGroup(uint id)
+{
+    d->currentGroup = id;
+}
+
+void MeshBuilder::endGroup()
+{
+    d->currentGroup = NIL;
+}
 
 // Add named material, check for uniquenes.
 uint MeshBuilder::addMaterial(const char * name)
@@ -264,7 +271,8 @@ uint MeshBuilder::addVertex(uint p, uint n/*= NIL*/, uint t0/*= NIL*/, uint t1/*
     nvDebugCheck(n == NIL || n < d->norArray.count());
     nvDebugCheck(t0 == NIL || t0 < d->texArray[0].count());
     nvDebugCheck(t1 == NIL || t1 < d->texArray[1].count());
-    nvDebugCheck(c0 == NIL || c0 < d->colArray[0].count());
+    //nvDebugCheck(c0 == NIL || c0 < d->colArray[0].count());
+    if (c0 > d->colArray[0].count()) c0 = NIL;    // @@ This seems to be happening in loc_swamp_catwalk.mb! No idea why.
     nvDebugCheck(c1 == NIL || c1 < d->colArray[1].count());
     nvDebugCheck(c2 == NIL || c2 < d->colArray[2].count());
 
@@ -403,7 +411,7 @@ uint MeshBuilder::weldNormals()
         for (uint v = 0; v < vertexCount; v++)
         {
             Vertex & vertex = d->vertexArray[v];
-            if (vertex.nor != NIL) vertex.pos = xrefs[vertex.nor];
+            if (vertex.nor != NIL) vertex.nor = xrefs[vertex.nor];
         }
     }
 
@@ -452,6 +460,33 @@ uint  MeshBuilder::weldColors(uint set/*=0*/)
     return d->colArray[set].count();
 }
 
+void MeshBuilder::weldVertices() {
+
+    if (d->vertexArray.count() == 0) {
+        // Nothing to do.
+        return;
+    }
+
+    Array<uint> xrefs;
+    Weld<Vertex> weldVertex;
+
+    // Weld vertices.
+    weldVertex(d->vertexArray, xrefs);
+
+    // Remap face indices.
+    const uint indexCount = d->indexArray.count();
+    for (uint i = 0; i < indexCount; i++)
+    {
+        d->indexArray[i] = xrefs[d->indexArray[i]];
+    }
+
+    // Remap vertex map.
+    foreach(i, d->vertexMap)
+    {
+        d->vertexMap[i].value = xrefs[d->vertexMap[i].value];
+    }
+}
+
 
 void MeshBuilder::optimize()
 {
@@ -466,30 +501,13 @@ void MeshBuilder::optimize()
     weldTexCoords(1);
     weldColors();
 
-    Array<uint> xrefs;
-    Weld<Vertex> weldVertex;
-
-    // Weld vertices.
-    weldVertex(d->vertexArray, xrefs);
-
-    // Remap face indices.
-    const uint indexCount = d->indexArray.count();
-    for (uint i = 0; i < indexCount; i++)
-    {
-        uint count = d->indexArray[i];
-        while(count--)
-        {
-            i++;
-            d->indexArray[i] = xrefs[d->indexArray[i]];
-        }
-    }
-
-    // Remap vertex map.
-    foreach(i, d->vertexMap)
-    {
-        d->vertexMap[i].value = xrefs[d->vertexMap[i].value];
-    }
+    weldVertices();
 }
+
+
+
+
+
 
 void MeshBuilder::removeUnusedMaterials(Array<uint> & newMaterialId)
 {
@@ -542,6 +560,30 @@ void MeshBuilder::removeUnusedMaterials(Array<uint> & newMaterialId)
     }
 }
 
+void MeshBuilder::sortFacesByGroup()
+{
+    const uint faceCount = d->faceArray.count();
+
+    Array<uint> faceGroupArray;
+    faceGroupArray.resize(faceCount);
+    
+    for (uint i = 0; i < faceCount; i++) {
+        faceGroupArray[i] = d->faceArray[i].group;
+    }
+
+    RadixSort radix;
+    radix.sort(faceGroupArray);
+
+    Array<Face> newFaceArray;
+    newFaceArray.resize(faceCount);
+
+    for (uint i = 0; i < faceCount; i++) {
+        newFaceArray[i] = d->faceArray[radix.rank(i)];
+    }
+
+    swap(newFaceArray, d->faceArray);
+}
+
 void MeshBuilder::sortFacesByMaterial()
 {
     const uint faceCount = d->faceArray.count();
@@ -550,7 +592,7 @@ void MeshBuilder::sortFacesByMaterial()
     faceMaterialArray.resize(faceCount);
     
     for (uint i = 0; i < faceCount; i++) {
-        faceMaterialArray[i] = d->faceArray[i].material; 
+        faceMaterialArray[i] = d->faceArray[i].material;
     }
 
     RadixSort radix;
@@ -577,7 +619,7 @@ void MeshBuilder::reset()
 void MeshBuilder::done()
 {
     if (d->currentGroup != NIL) {
-        //endGroup();
+        endGroup();
     }
 
     if (d->currentMaterial != NIL) {
@@ -776,9 +818,8 @@ HalfEdge::Mesh * MeshBuilder::buildHalfEdgeMesh(bool weldPositions, Error * erro
     const uint faceCount = d->faceArray.count();
     for (uint f = 0; f < faceCount; f++)
     {
-        uint firstIndex = d->faceArray[f].firstIndex;
-        uint indexCount = d->faceArray[f].indexCount;
-        uint material = d->faceArray[f].material;
+        const uint firstIndex = d->faceArray[f].firstIndex;
+        const uint indexCount = d->faceArray[f].indexCount;
 
         HalfEdge::Face * face = mesh->addFace(d->indexArray, firstIndex, indexCount);
         
@@ -798,7 +839,8 @@ HalfEdge::Mesh * MeshBuilder::buildHalfEdgeMesh(bool weldPositions, Error * erro
         }
 
         if (face != NULL) {
-            face->material = material;
+            face->group = d->faceArray[f].group;
+            face->material = d->faceArray[f].material;
         }
     }
 

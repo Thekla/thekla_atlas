@@ -34,7 +34,8 @@ bool nv::computeOrthogonalProjectionMap(HalfEdge::Mesh * mesh)
         points[i] = mesh->vertexAt(i)->pos;
     }
 
-    axis[0] = Fit::computePrincipalComponent(vertexCount, points.buffer());
+#if 0
+    axis[0] = Fit::computePrincipalComponent_EigenSolver(vertexCount, points.buffer());
     axis[0] = normalize(axis[0]);
 
     Plane plane = Fit::bestPlane(vertexCount, points.buffer());
@@ -43,6 +44,25 @@ bool nv::computeOrthogonalProjectionMap(HalfEdge::Mesh * mesh)
 
     axis[1] = cross(axis[0], n);
     axis[1] = normalize(axis[1]);
+#else
+    // Avoid redundant computations.
+    float matrix[6];
+    Fit::computeCovariance(vertexCount, points.buffer(), matrix);
+
+    if (matrix[0] == 0 && matrix[3] == 0 && matrix[5] == 0) {
+        return false;
+    }
+
+    float eigenValues[3];
+    Vector3 eigenVectors[3];
+    if (!nv::Fit::eigenSolveSymmetric3(matrix, eigenValues, eigenVectors)) {
+        return false;
+    }
+
+    axis[0] = normalize(eigenVectors[0]);
+    axis[1] = normalize(eigenVectors[1]);
+#endif
+
 
 #else
 

@@ -10,17 +10,31 @@ These foreach macros are very non-standard and somewhat confusing, but I like th
 
 #include "nvcore.h"
 
-#if NV_CC_GNUC // If typeof is available:
+
+#if NV_CC_CPP11
+
+#define NV_FOREACH(i, container) \
+    for (auto i = (container).start(); !(container).isDone(i); (container).advance(i))
+
+#elif NV_CC_GNUC // If typeof is available:
+
+/*
+Ideally we would like to write this:
+
+#define NV_FOREACH(i, container) \
+    for(decltype(container)::PseudoIndex i((container).start()); !(container).isDone(i); (container).advance(i))
+
+But gcc versions prior to 4.7 required an intermediate type. See:
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=6709
+*/
 
 #define NV_FOREACH(i, container) \
     typedef typeof(container) NV_STRING_JOIN2(cont,__LINE__); \
     for(NV_STRING_JOIN2(cont,__LINE__)::PseudoIndex i((container).start()); !(container).isDone(i); (container).advance(i))
-/*
-#define NV_FOREACH(i, container) \
-for(typename typeof(container)::PseudoIndex i((container).start()); !(container).isDone(i); (container).advance(i))
-*/
 
 #else // If typeof not available:
+
+#define NV_NEED_PSEUDOINDEX_WRAPPER 1
 
 #include <new> // placement new
 
@@ -50,6 +64,7 @@ struct PseudoIndexWrapper {
 // Declare foreach keyword.
 #if !defined NV_NO_USE_KEYWORDS
 #   define foreach NV_FOREACH
+#   define foreach_index NV_FOREACH
 #endif
 
 

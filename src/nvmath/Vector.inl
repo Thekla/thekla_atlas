@@ -158,6 +158,13 @@ namespace nv
         z *= v.z;
     }
 
+    inline void Vector3::operator/=(Vector3::Arg v)
+    {
+        x /= v.x;
+        y /= v.y;
+        z /= v.z;
+    }
+
     inline bool operator==(Vector3::Arg a, Vector3::Arg b)
     {
         return a.x == b.x && a.y == b.y && a.z == b.z; 
@@ -243,12 +250,28 @@ namespace nv
         w *= s;
     }
 
+    inline void Vector4::operator/=(float s)
+    {
+        x /= s;
+        y /= s;
+        z /= s;
+        w /= s;
+    }
+
     inline void Vector4::operator*=(Vector4::Arg v)
     {
         x *= v.x;
         y *= v.y;
         z *= v.z;
         w *= v.w;
+    }
+
+    inline void Vector4::operator/=(Vector4::Arg v)
+    {
+        x /= v.x;
+        y /= v.y;
+        z /= v.z;
+        w /= v.w;
     }
 
     inline bool operator==(Vector4::Arg a, Vector4::Arg b)
@@ -417,13 +440,26 @@ namespace nv
     }
 
     // Note, this is the area scaled by 2!
+    inline float triangleArea(Vector2::Arg v0, Vector2::Arg v1)
+    {
+	    return (v0.x * v1.y - v0.y * v1.x); // * 0.5f;
+    }
     inline float triangleArea(Vector2::Arg a, Vector2::Arg b, Vector2::Arg c)
     {
-	    Vector2 v0 = a - c;
-	    Vector2 v1 = b - c;
+        // IC: While it may be appealing to use the following expression:
+        //return (c.x * a.y + a.x * b.y + b.x * c.y - b.x * a.y - c.x * b.y - a.x * c.y); // * 0.5f;
 
-	    return (v0.x * v1.y - v0.y * v1.x);
+        // That's actually a terrible idea. Small triangles far from the origin can end up producing fairly large floating point 
+        // numbers and the results becomes very unstable and dependent on the order of the factors.
+
+        // Instead, it's preferable to subtract the vertices first, and multiply the resulting small values together. The result
+        // in this case is always much more accurate (as long as the triangle is small) and less dependent of the location of 
+        // the triangle.
+
+        //return ((a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x)); // * 0.5f;
+        return triangleArea(a-c, b-c);
     }
+
 
     template <>
     inline uint hash(const Vector2 & v, uint h)
@@ -673,6 +709,11 @@ namespace nv
     }
 
     inline Vector4 operator*(float s, Vector4::Arg v)
+    {
+        return scale(v, s);
+    }
+
+    inline Vector4 operator*(Vector4::Arg v, Vector4::Arg s)
     {
         return scale(v, s);
     }

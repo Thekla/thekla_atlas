@@ -34,8 +34,8 @@ namespace nv
         uint addTexCoord(const Vector2 & v, uint set = 0);
         uint addColor(const Vector4 & v, uint set = 0);
 
-        //void beginGroup(uint id);
-        //void endGroup();
+        void beginGroup(uint id);
+        void endGroup();
 
         uint addMaterial(const char * name);
         void beginMaterial(uint id);
@@ -51,9 +51,11 @@ namespace nv
         uint weldNormals();
         uint weldTexCoords(uint set = 0);
         uint weldColors(uint set = 0);
+        void weldVertices();
 
         void optimize(); // eliminate duplicate components and duplicate vertices.
         void removeUnusedMaterials(Array<uint> & newMaterialId);
+        void sortFacesByGroup();
         void sortFacesByMaterial();
 
         void done();

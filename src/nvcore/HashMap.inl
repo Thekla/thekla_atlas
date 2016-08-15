@@ -222,13 +222,16 @@ namespace nv
     // - If there is a value, return true, and set *value to the entry's value.
     // - If value == NULL, return true or false according to the presence of the key, but don't touch *value.
     template<typename T, typename U, typename H, typename E>
-    bool HashMap<T, U, H, E>::get(const T& key, U* value /*= NULL*/) const
+    bool HashMap<T, U, H, E>::get(const T& key, U* value/*= NULL*/, T* other_key/*= NULL*/) const
     {
         int	index = findIndex(key);
         if (index >= 0)
         {
-            if (value) {
+            if (value != NULL) {
                 *value = entry(index).value;	// take care with side-effects!
+            }
+            if (other_key != NULL) {
+                *other_key = entry(index).key;
             }
             return true;
         }
@@ -319,7 +322,7 @@ namespace nv
                 return s;
             }
             map.entry_count = entry_count;
-            map.size_mask = nextPowerOfTwo(entry_count) - 1;
+            map.size_mask = nextPowerOfTwo(U32(entry_count)) - 1;
             map.table = malloc<HashMapEntry>(map.size_mask + 1);
 
             for (int i = 0; i <= map.size_mask; i++) {
@@ -490,7 +493,7 @@ namespace nv
         }
 
         // Force new_size to be a power of two.
-        new_size = nextPowerOfTwo(new_size);
+        new_size = nextPowerOfTwo(U32(new_size));
 
         HashMap<T, U, H, E> new_hash;
         new_hash.table = malloc<Entry>(new_size);

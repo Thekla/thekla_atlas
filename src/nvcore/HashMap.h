@@ -58,7 +58,7 @@ namespace nv
         bool remove(const T& key);
         void clear();
         bool isEmpty() const;
-        bool get(const T& key, U* value = NULL) const;
+        bool get(const T& key, U* value = NULL, T* other_key = NULL) const;
         bool contains(const T & key) const;
         int	size() const;
         int	count() const;
@@ -105,18 +105,7 @@ namespace nv
         bool isDone(const PseudoIndex & i) const { nvDebugCheck(i <= size_mask+1); return i == size_mask+1; };
         void advance(PseudoIndex & i) const { nvDebugCheck(i <= size_mask+1); i++; findNext(i); }
 
-#if NV_CC_GNUC
-        Entry & operator[]( const PseudoIndex & i ) {
-            Entry & e = entry(i);
-            nvDebugCheck(e.isTombstone() == false);
-            return e;
-        }
-        const Entry & operator[]( const PseudoIndex & i ) const {
-            const Entry & e = entry(i);
-            nvDebugCheck(e.isTombstone() == false);
-            return e;
-        }
-#elif NV_CC_MSVC
+#if NV_NEED_PSEUDOINDEX_WRAPPER
         Entry & operator[]( const PseudoIndexWrapper & i ) {
             Entry & e = entry(i(this));
             nvDebugCheck(e.isTombstone() == false);
@@ -124,6 +113,17 @@ namespace nv
         }
         const Entry & operator[]( const PseudoIndexWrapper & i ) const {
             const Entry & e = entry(i(this));
+            nvDebugCheck(e.isTombstone() == false);
+            return e;
+        }
+#else
+        Entry & operator[](const PseudoIndex & i) {
+            Entry & e = entry(i);
+            nvDebugCheck(e.isTombstone() == false);
+            return e;
+        }
+        const Entry & operator[](const PseudoIndex & i) const {
+            const Entry & e = entry(i);
             nvDebugCheck(e.isTombstone() == false);
             return e;
         }

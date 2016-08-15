@@ -6,6 +6,7 @@
 
 #include "nvmath/nvmath.h"
 #include "nvmath/Vector.inl" // @@ Do not include inl files from header files.
+#include "nvmath/Matrix.h"
 
 namespace nv
 {
@@ -36,6 +37,8 @@ namespace nv
     inline Quaternion::Quaternion(float f) : x(f), y(f), z(f), w(f) {}
     inline Quaternion::Quaternion(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
     inline Quaternion::Quaternion(Vector4::Arg v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+
+    // @@ Move all these to Quaternion.inl!
 
     inline const Quaternion & Quaternion::operator=(Quaternion::Arg v) { 
         x = v.x;
@@ -176,6 +179,32 @@ namespace nv
         
         Vector3 t = 2 * cross(imag(q), v);
         return v + q.w * t + cross(imag(q), t);
+    }
+
+    // @@ Not tested.
+    // From Insomniac's Mike Day:
+    // http://www.insomniacgames.com/converting-a-rotation-matrix-to-a-quaternion/
+    inline Quaternion fromMatrix(const Matrix & m) {
+        if (m(2, 2) < 0) {
+            if (m(0, 0) < m(1,1)) {
+                float t = 1 - m(0, 0) - m(1, 1) - m(2, 2);
+                return Quaternion(t, m(0,1)+m(1,0), m(2,0)+m(0,2), m(1,2)-m(2,1));
+            }
+            else {
+                float t = 1 - m(0, 0) + m(1, 1) - m(2, 2);
+                return Quaternion(t, m(0,1) + m(1,0), m(1,2) + m(2,1), m(2,0) - m(0,2));
+            }
+        }
+        else {
+            if (m(0, 0) < -m(1, 1)) {
+                float t = 1 - m(0, 0) - m(1, 1) + m(2, 2);
+                return Quaternion(t, m(2,0) + m(0,2), m(1,2) + m(2,1), m(0,1) - m(1,0));
+            }
+            else {
+                float t = 1 + m(0, 0) + m(1, 1) + m(2, 2);
+                return Quaternion(t, m(1,2) - m(2,1), m(2,0) - m(0,2), m(0,1) - m(1,0));
+            }
+        }
     }
 
 

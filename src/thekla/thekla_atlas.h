@@ -44,7 +44,8 @@ struct Atlas_Options {
         struct {
             int packing_quality;
             float texel_area;       // This is not really texel area, but 1 / texel width?
-            int texel_padding; 
+            bool block_align;       // Align charts to 4x4 blocks. 
+            bool conservative;      // Pack charts with extra padding.
         } witness;
     } packer_options;
 };

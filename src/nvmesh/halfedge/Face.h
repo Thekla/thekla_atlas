@@ -17,11 +17,12 @@ namespace nv
     public:
 
         uint id;
-        uint material;
+        uint16 group;
+        uint16 material;
         Edge * edge;
 
 
-        Face(uint id) : id(id), material(NIL), edge(NULL) {}
+        Face(uint id) : id(id), group(~0), material(~0), edge(NULL) {}
 
         float area() const;
         float parametricArea() const;

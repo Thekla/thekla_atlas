@@ -39,6 +39,9 @@ namespace nv
         inline uint * ranks() { nvDebugCheck(m_validRanks); return m_ranks; }
         inline uint rank(uint i) const { nvDebugCheck(m_validRanks); return m_ranks[i]; }
 
+        // query whether the sort has been performed
+        inline bool valid() const { return m_validRanks; }
+
     private:
         uint m_size;
         uint * m_ranks;

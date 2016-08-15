@@ -7,9 +7,15 @@
 #include "nvcore.h"
 
 #include <stdlib.h> // malloc(), realloc() and free()
+#include <string.h> // memset
 //#include <stddef.h> // size_t
 
 //#include <new>	// new and delete
+
+#define TRACK_MEMORY_LEAKS 0
+#if TRACK_MEMORY_LEAKS
+#include <vld.h>
+#endif
 
 
 #if NV_CC_GNUC
@@ -41,6 +47,8 @@ extern "C" {
 #endif
 
 namespace nv {
+    NVCORE_API void * aligned_malloc(size_t size, size_t alignment);
+    NVCORE_API void aligned_free(void * );
 
     // C++ helpers.
     template <typename T> NV_FORCEINLINE T * malloc(size_t count) {
@@ -53,6 +61,10 @@ namespace nv {
 
     template <typename T> NV_FORCEINLINE void free(const T * ptr) {
         ::free((void *)ptr);
+    }
+
+    template <typename T> NV_FORCEINLINE void zero(T & data) {
+        memset(&data, 0, sizeof(T));
     }
 
 } // nv namespace

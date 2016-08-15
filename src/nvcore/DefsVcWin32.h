@@ -19,7 +19,9 @@
 #define NV_CONST
 
 // Set standard function names.
-#define snprintf _snprintf
+#if _MSC_VER < 1900
+#	define snprintf _snprintf
+#endif
 #if _MSC_VER < 1500
 #   define vsnprintf _vsnprintf
 #endif
@@ -27,7 +29,7 @@
 #   define strtoll _strtoi64
 #   define strtoull _strtoui64
 #endif
-#define chdir _chdir
+//#define chdir _chdir
 #define getcwd _getcwd 
 
 #if _MSC_VER <= 1600

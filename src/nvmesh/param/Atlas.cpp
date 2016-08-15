@@ -11,6 +11,8 @@
 #include "LeastSquaresConformalMap.h"
 #include "ParameterizationQuality.h"
 
+//#include "nvmesh/export/MeshExportOBJ.h"
+
 #include "nvmesh/halfedge/Mesh.h"
 #include "nvmesh/halfedge/Face.h"
 #include "nvmesh/halfedge/Vertex.h"
@@ -18,43 +20,92 @@
 #include "nvmesh/MeshBuilder.h"
 #include "nvmesh/MeshTopology.h"
 #include "nvmesh/param/Util.h"
+#include "nvmesh/geometry/Measurements.h"
 
 #include "nvmath/Vector.inl"
+#include "nvmath/Fitting.h"
+#include "nvmath/Box.inl"
+#include "nvmath/ProximityGrid.h"
+#include "nvmath/Morton.h"
 
 #include "nvcore/StrLib.h"
 #include "nvcore/Array.inl"
-
-#include <float.h> // FLT_MAX
+#include "nvcore/HashMap.inl"
 
 using namespace nv;
 
 
 /// Ctor.
-Atlas::Atlas(const HalfEdge::Mesh * mesh) : m_mesh(mesh)
+Atlas::Atlas()
 {
-    nvCheck(mesh != NULL);
 }
 
 // Dtor.
 Atlas::~Atlas()
 {
-    deleteAll(m_chartArray);
+    deleteAll(m_meshChartsArray);
 }
-
 
 uint Atlas::chartCount() const
 {
-    return m_chartArray.count();
+    uint count = 0;
+    foreach(c, m_meshChartsArray) {
+        count += m_meshChartsArray[c]->chartCount();
+    }
+    return count;
 }
 
 const Chart * Atlas::chartAt(uint i) const
 {
-    return m_chartArray[i];
+    foreach(c, m_meshChartsArray) {
+        uint count = m_meshChartsArray[c]->chartCount();
+
+        if (i < count) {
+            return m_meshChartsArray[c]->chartAt(i);
+        }
+
+        i -= count;
+    }
+
+    return NULL;
 }
-Chart * Atlas::chartAt(uint i)
+
+Chart * Atlas::chartAt(uint i) 
 {
-    return m_chartArray[i];
+    foreach(c, m_meshChartsArray) {
+        uint count = m_meshChartsArray[c]->chartCount();
+
+        if (i < count) {
+            return m_meshChartsArray[c]->chartAt(i);
+        }
+
+        i -= count;
+    }
+
+    return NULL;
 }
+
+// Extract the charts and add to this atlas.
+void Atlas::addMeshCharts(MeshCharts * meshCharts)
+{
+    m_meshChartsArray.append(meshCharts);
+}
+
+void Atlas::extractCharts(const HalfEdge::Mesh * mesh)
+{
+    MeshCharts * meshCharts = new MeshCharts(mesh);
+    meshCharts->extractCharts();
+    addMeshCharts(meshCharts);
+}
+
+void Atlas::computeCharts(const HalfEdge::Mesh * mesh, const SegmentationSettings & settings, const Array<uint> & unchartedMaterialArray)
+{
+    MeshCharts * meshCharts = new MeshCharts(mesh);
+    meshCharts->computeCharts(settings, unchartedMaterialArray);
+    addMeshCharts(meshCharts);
+}
+
+
 
 
 #if 0
@@ -171,7 +222,38 @@ bool Atlas::computeSeamlessTextureAtlas(bool groupFaces/*= true*/, bool scaleTil
 
 #endif
 
-void Atlas::extractCharts()
+
+void Atlas::parameterizeCharts()
+{
+    foreach(i, m_meshChartsArray) {
+        m_meshChartsArray[i]->parameterizeCharts();
+    }
+}
+
+
+float Atlas::packCharts(int quality, float texelsPerUnit, bool blockAlign, bool conservative)
+{
+    AtlasPacker packer(this);
+    packer.packCharts(quality, texelsPerUnit, blockAlign, conservative);
+    return packer.computeAtlasUtilization();
+}
+
+
+
+
+/// Ctor.
+MeshCharts::MeshCharts(const HalfEdge::Mesh * mesh) : m_mesh(mesh)
+{
+}
+
+// Dtor.
+MeshCharts::~MeshCharts()
+{
+    deleteAll(m_chartArray);
+}
+
+
+void MeshCharts::extractCharts()
 {
     const uint faceCount = m_mesh->faceCount();
 
@@ -296,8 +378,8 @@ Postprocess:
 SegmentationSettings::SegmentationSettings()
 {
     // Charts have no area or boundary limits right now.
-    maxChartArea = FLT_MAX;
-    maxBoundaryLength = FLT_MAX;
+    maxChartArea = NV_FLOAT_MAX;
+    maxBoundaryLength = NV_FLOAT_MAX;
 
     proxyFitMetricWeight = 1.0f;
     roundnessMetricWeight = 0.1f;
@@ -308,99 +390,133 @@ SegmentationSettings::SegmentationSettings()
 
 
 
-void Atlas::computeCharts(const SegmentationSettings & settings)
+void MeshCharts::computeCharts(const SegmentationSettings & settings, const Array<uint> & unchartedMaterialArray)
 {
+    Chart * vertexMap = NULL;
+    
+    if (unchartedMaterialArray.count() != 0) {
+        vertexMap = new Chart();
+        vertexMap->buildVertexMap(m_mesh, unchartedMaterialArray);
+
+        if (vertexMap->faceCount() == 0) {
+            delete vertexMap;
+            vertexMap = NULL;
+        }
+    }
+    
+
     AtlasBuilder builder(m_mesh);
 
-    // Tweak these values:
-    const float maxThreshold = 2;
-    const uint growFaceCount = 32;
-    const uint maxIterations = 4;
-    
-    builder.settings = settings;
+    if (vertexMap != NULL) {
+        // Mark faces that do not need to be charted.
+        builder.markUnchartedFaces(vertexMap->faceArray());
 
-    //builder.settings.proxyFitMetricWeight *= 0.75; // relax proxy fit weight during initial seed placement.
-    //builder.settings.roundnessMetricWeight = 0;
-    //builder.settings.straightnessMetricWeight = 0;
-
-    // This seems a reasonable estimate.
-    uint maxSeedCount = max(6U, m_mesh->faceCount());
-
-    // Create initial charts greedely.
-    nvDebug("### Placing seeds\n");
-    builder.placeSeeds(maxThreshold, maxSeedCount);
-    nvDebug("###   Placed %d seeds (max = %d)\n", builder.chartCount(), maxSeedCount);
-
-    builder.updateProxies();
-
-    builder.mergeCharts();
-
-#if 1
-    nvDebug("### Relocating seeds\n");
-    builder.relocateSeeds();
-
-    nvDebug("### Reset charts\n");
-    builder.resetCharts();
-
-    builder.settings = settings;
-
-    nvDebug("### Growing charts\n");
-
-    // Restart process growing charts in parallel.
-    uint iteration = 0;
-    while (true)
-    {
-        if (!builder.growCharts(maxThreshold, growFaceCount))
-        {
-            nvDebug("### Can't grow anymore\n");
-
-            // If charts cannot grow more: fill holes, merge charts, relocate seeds and start new iteration.
-
-            nvDebug("### Filling holes\n");
-            builder.fillHoles(maxThreshold);
-            nvDebug("###   Using %d charts now\n", builder.chartCount());
-
-            builder.updateProxies();
-
-            nvDebug("### Merging charts\n");
-            builder.mergeCharts();
-            nvDebug("###   Using %d charts now\n", builder.chartCount());
-
-            nvDebug("### Reseeding\n");
-            if (!builder.relocateSeeds())
-            {
-                nvDebug("### Cannot relocate seeds anymore\n");
-
-                // Done!
-                break;
-            }
-
-            if (iteration == maxIterations)
-            {
-                nvDebug("### Reached iteration limit\n");
-                break;
-            }
-            iteration++;
-
-            nvDebug("### Reset charts\n");
-            builder.resetCharts();
-
-            nvDebug("### Growing charts\n");
-        }
-    };
-#endif
-
-    // Make sure no holes are left!
-    nvDebugCheck(builder.facesLeft == 0);
-
-    const uint chartCount = builder.chartArray.count();
-    for (uint i = 0; i < chartCount; i++)
-    {
-        Chart * chart = new Chart();
-        m_chartArray.append(chart);
-
-        chart->build(m_mesh, builder.chartFaces(i));
+        m_chartArray.append(vertexMap);
     }
+
+    if (builder.facesLeft != 0) {
+
+        // Tweak these values:
+        const float maxThreshold = 2;
+        const uint growFaceCount = 32;
+        const uint maxIterations = 4;
+        
+        builder.settings = settings;
+
+        //builder.settings.proxyFitMetricWeight *= 0.75; // relax proxy fit weight during initial seed placement.
+        //builder.settings.roundnessMetricWeight = 0;
+        //builder.settings.straightnessMetricWeight = 0;
+
+        // This seems a reasonable estimate.
+        uint maxSeedCount = max(6U, builder.facesLeft);
+
+        // Create initial charts greedely.
+        nvDebug("### Placing seeds\n");
+        builder.placeSeeds(maxThreshold, maxSeedCount);
+        nvDebug("###   Placed %d seeds (max = %d)\n", builder.chartCount(), maxSeedCount);
+
+        builder.updateProxies();
+
+        builder.mergeCharts();
+
+    #if 1
+        nvDebug("### Relocating seeds\n");
+        builder.relocateSeeds();
+
+        nvDebug("### Reset charts\n");
+        builder.resetCharts();
+
+        if (vertexMap != NULL) {
+            builder.markUnchartedFaces(vertexMap->faceArray());
+        }
+
+        builder.settings = settings;
+
+        nvDebug("### Growing charts\n");
+
+        // Restart process growing charts in parallel.
+        uint iteration = 0;
+        while (true)
+        {
+            if (!builder.growCharts(maxThreshold, growFaceCount))
+            {
+                nvDebug("### Can't grow anymore\n");
+
+                // If charts cannot grow more: fill holes, merge charts, relocate seeds and start new iteration.
+
+                nvDebug("### Filling holes\n");
+                builder.fillHoles(maxThreshold);
+                nvDebug("###   Using %d charts now\n", builder.chartCount());
+
+                builder.updateProxies();
+
+                nvDebug("### Merging charts\n");
+                builder.mergeCharts();
+                nvDebug("###   Using %d charts now\n", builder.chartCount());
+
+                nvDebug("### Reseeding\n");
+                if (!builder.relocateSeeds())
+                {
+                    nvDebug("### Cannot relocate seeds anymore\n");
+
+                    // Done!
+                    break;
+                }
+
+                if (iteration == maxIterations)
+                {
+                    nvDebug("### Reached iteration limit\n");
+                    break;
+                }
+                iteration++;
+
+                nvDebug("### Reset charts\n");
+                builder.resetCharts();
+
+                if (vertexMap != NULL) {
+                    builder.markUnchartedFaces(vertexMap->faceArray());
+                }
+
+                nvDebug("### Growing charts\n");
+            }
+        };
+    #endif
+
+        // Make sure no holes are left!
+        nvDebugCheck(builder.facesLeft == 0);
+
+        const uint chartCount = builder.chartArray.count();
+        for (uint i = 0; i < chartCount; i++)
+        {
+            Chart * chart = new Chart();
+            m_chartArray.append(chart);
+
+            chart->build(m_mesh, builder.chartFaces(i));
+        }
+    }
+
+
+    const uint chartCount = m_chartArray.count();
 
     // Build face indices.
     m_faceChart.resize(m_mesh->faceCount());
@@ -438,15 +554,14 @@ void Atlas::computeCharts(const SegmentationSettings & settings)
     {
         m_totalVertexCount = 0;
     }
-   
 }
 
 
-void Atlas::parameterizeCharts()
+void MeshCharts::parameterizeCharts()
 {
     ParameterizationQuality globalParameterizationQuality;
 
-    // Paramterize the charts.
+    // Parameterize the charts.
     uint diskCount = 0;
     const uint chartCount = m_chartArray.count();
     for (uint i = 0; i < chartCount; i++)\
@@ -454,6 +569,10 @@ void Atlas::parameterizeCharts()
         Chart * chart = m_chartArray[i];
 
         bool isValid = false;
+
+        if (chart->isVertexMapped()) {
+            continue;
+        }
 
         if (chart->isDisk())
         {
@@ -473,8 +592,10 @@ void Atlas::parameterizeCharts()
                 computeLeastSquaresConformalMap(chart->unifiedMesh());
                 ParameterizationQuality lscmQuality(chart->unifiedMesh());
                 
-                // If the orthogonal projection produces better results, just use that. @@ Make sure the orthogonal map is valid has no overlaps.
-                /*if (orthogonalQuality.rmsStretchMetric() < lscmQuality.rmsStretchMetric()) {
+                // If the orthogonal projection produces better results, just use that.
+                // @@ It may be dangerous to do this, because isValid() does not detect self-overlaps.
+                // @@ Another problem is that with very thin patches with nearly zero parametric area, the results of our metric are not accurate.
+                /*if (orthogonalQuality.isValid() && orthogonalQuality.rmsStretchMetric() < lscmQuality.rmsStretchMetric()) {
                     computeOrthogonalProjectionMap(chart->unifiedMesh());
                     chartParameterizationQuality = orthogonalQuality;
                 }
@@ -536,18 +657,7 @@ void Atlas::parameterizeCharts()
 
 
 
-float Atlas::packCharts(int quality, float texelArea, int padding)
-{
-    AtlasPacker packer(this);
-    packer.packCharts(quality, texelArea, padding);
-    return packer.computeAtlasUtilization();
-}
-
-
-
-
-
-Chart::Chart() : m_chartMesh(NULL), m_unifiedMesh(NULL), m_isDisk(false), scale(1)
+Chart::Chart() : m_chartMesh(NULL), m_unifiedMesh(NULL), m_isDisk(false), m_isVertexMapped(false)
 {
 }
 
@@ -708,6 +818,295 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
 }
 
 
+void Chart::buildVertexMap(const HalfEdge::Mesh * originalMesh, const Array<uint> & unchartedMaterialArray)
+{
+    nvCheck(m_chartMesh == NULL && m_unifiedMesh == NULL);
+
+    m_isVertexMapped = true;
+
+    // Build face indices.
+    m_faceArray.clear();
+
+    const uint meshFaceCount = originalMesh->faceCount();
+    for (uint f = 0; f < meshFaceCount; f++) {
+        const HalfEdge::Face * face = originalMesh->faceAt(f);
+
+        if (unchartedMaterialArray.contains(face->material)) {
+            m_faceArray.append(f);
+        }
+    }
+
+    const uint faceCount = m_faceArray.count();
+
+    if (faceCount == 0) {
+        return;
+    }
+
+
+    // @@ The chartMesh construction is basically the same as with regular charts, don't duplicate!
+
+    const uint meshVertexCount = originalMesh->vertexCount();
+
+    m_chartMesh = new HalfEdge::Mesh();
+
+    Array<uint> chartMeshIndices;
+    chartMeshIndices.resize(meshVertexCount, ~0);
+
+    // Vertex map mesh only has disconnected vertices.
+    for (uint f = 0; f < faceCount; f++)
+    {
+        const HalfEdge::Face * face = originalMesh->faceAt(m_faceArray[f]);
+        nvDebugCheck(face != NULL);
+
+        for (HalfEdge::Face::ConstEdgeIterator it(face->edges()); !it.isDone(); it.advance())
+        {
+            const HalfEdge::Vertex * vertex = it.current()->vertex;
+
+            if (chartMeshIndices[vertex->id] == ~0)
+            {
+                chartMeshIndices[vertex->id] = m_chartMesh->vertexCount();
+                m_chartToOriginalMap.append(vertex->id);
+
+                HalfEdge::Vertex * v = m_chartMesh->addVertex(vertex->pos);
+                v->nor = vertex->nor;
+                v->tex = vertex->tex; // @@ Not necessary.
+            }
+        }
+    }
+
+    // @@ Link colocals using the original mesh canonical map? Build canonical map on the fly? Do we need to link colocals at all for this?
+    //m_chartMesh->linkColocals();
+
+    Array<uint> faceIndices(7);
+
+    // Add faces.
+    for (uint f = 0; f < faceCount; f++)
+    {
+        const HalfEdge::Face * face = originalMesh->faceAt(m_faceArray[f]);
+        nvDebugCheck(face != NULL);
+
+        faceIndices.clear();
+
+        for(HalfEdge::Face::ConstEdgeIterator it(face->edges()); !it.isDone(); it.advance())
+        {
+            const HalfEdge::Vertex * vertex = it.current()->vertex;
+            nvDebugCheck(vertex != NULL);
+            nvDebugCheck(chartMeshIndices[vertex->id] != ~0);
+
+            faceIndices.append(chartMeshIndices[vertex->id]);
+        }
+
+        HalfEdge::Face * new_face = m_chartMesh->addFace(faceIndices);
+        nvDebugCheck(new_face != NULL);
+    }
+
+    m_chartMesh->linkBoundary();
+
+
+    const uint chartVertexCount = m_chartMesh->vertexCount();
+
+    Box bounds;
+    bounds.clearBounds();
+
+    for (uint i = 0; i < chartVertexCount; i++) {
+        HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(i);
+        bounds.addPointToBounds(vertex->pos);
+    }
+
+    ProximityGrid grid;
+    grid.init(bounds, chartVertexCount);
+
+    for (uint i = 0; i < chartVertexCount; i++) {
+        HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(i);
+        grid.add(vertex->pos, i);
+    }
+
+
+#if 0
+    // Arrange vertices in a rectangle.
+    vertexMapWidth = ftoi_ceil(sqrtf(float(chartVertexCount)));
+    vertexMapHeight = (chartVertexCount + vertexMapWidth - 1) / vertexMapWidth;
+    nvDebugCheck(vertexMapWidth >= vertexMapHeight);
+
+    int x = 0, y = 0;
+    for (uint i = 0; i < chartVertexCount; i++) {
+        HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(i);
+
+        vertex->tex.x = float(x);
+        vertex->tex.y = float(y);
+
+        x++;
+        if (x == vertexMapWidth) {
+            x = 0;
+            y++;
+            nvCheck(y < vertexMapHeight);
+        }
+    }
+
+#elif 0
+    // Arrange vertices in a rectangle, traversing grid in 3D morton order and laying them down in 2D morton order.
+    vertexMapWidth = ftoi_ceil(sqrtf(float(chartVertexCount)));
+    vertexMapHeight = (chartVertexCount + vertexMapWidth - 1) / vertexMapWidth;
+    nvDebugCheck(vertexMapWidth >= vertexMapHeight);
+
+    int n = 0;
+    uint32 texelCode = 0;
+
+    uint cellsVisited = 0;
+
+    const uint32 cellCodeCount = grid.mortonCount();
+    for (uint32 cellCode = 0; cellCode < cellCodeCount; cellCode++) {
+        int cell = grid.mortonIndex(cellCode);
+        if (cell < 0) continue;
+
+        cellsVisited++;
+
+        const Array<uint> & indexArray = grid.cellArray[cell].indexArray;
+
+        foreach(i, indexArray) {
+            uint idx = indexArray[i];
+            HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(idx);
+
+            //vertex->tex.x = float(n % rectangleWidth) + 0.5f;
+            //vertex->tex.y = float(n / rectangleWidth) + 0.5f;
+
+            // Lay down the points in z order too.
+            uint x, y;
+            do {
+                x = decodeMorton2X(texelCode);
+                y = decodeMorton2Y(texelCode);
+                texelCode++;
+            } while (x >= U32(vertexMapWidth) || y >= U32(vertexMapHeight));
+            
+            vertex->tex.x = float(x);
+            vertex->tex.y = float(y);
+
+            n++;
+        }
+    }
+
+    nvDebugCheck(cellsVisited == grid.cellArray.count());
+    nvDebugCheck(n == chartVertexCount);
+
+#else
+
+    uint texelCount = 0;
+
+    const float positionThreshold = 0.01f;
+    const float normalThreshold = 0.01f;
+
+    uint verticesVisited = 0;
+    uint cellsVisited = 0;
+
+    Array<int> vertexIndexArray;
+    vertexIndexArray.resize(chartVertexCount, -1); // Init all indices to -1.
+
+    // Traverse vertices in morton order. @@ It may be more interesting to sort them based on orientation.
+    const uint cellCodeCount = grid.mortonCount();
+    for (uint cellCode = 0; cellCode < cellCodeCount; cellCode++) {
+        int cell = grid.mortonIndex(cellCode);
+        if (cell < 0) continue;
+
+        cellsVisited++;
+
+        const Array<uint> & indexArray = grid.cellArray[cell].indexArray;
+
+        foreach(i, indexArray) {
+            uint idx = indexArray[i];
+            HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(idx);
+
+            nvDebugCheck(vertexIndexArray[idx] == -1);
+
+            Array<uint> neighbors;
+            grid.gather(vertex->pos, positionThreshold, /*ref*/neighbors);
+
+            // Compare against all nearby vertices, cluster greedily.
+            foreach(j, neighbors) {
+                uint otherIdx = neighbors[j];
+
+                if (vertexIndexArray[otherIdx] != -1) {
+                    HalfEdge::Vertex * otherVertex = m_chartMesh->vertexAt(otherIdx);
+
+                    if (distance(vertex->pos, otherVertex->pos) < positionThreshold &&
+                        distance(vertex->nor, otherVertex->nor) < normalThreshold) 
+                    {
+                        vertexIndexArray[idx] = vertexIndexArray[otherIdx];
+                        break;
+                    }
+                }
+            }
+
+            // If index not assigned, assign new one.
+            if (vertexIndexArray[idx] == -1) {
+                vertexIndexArray[idx] = texelCount++;
+            }
+
+            verticesVisited++;
+        }
+    }
+
+    nvDebugCheck(cellsVisited == grid.cellArray.count());
+    nvDebugCheck(verticesVisited == chartVertexCount);
+
+    vertexMapWidth = ftoi_ceil(sqrtf(float(texelCount)));
+    vertexMapWidth = (vertexMapWidth + 3) & ~3;                             // Width aligned to 4.
+    vertexMapHeight = vertexMapWidth == 0 ? 0 : (texelCount + vertexMapWidth - 1) / vertexMapWidth;
+    //vertexMapHeight = (vertexMapHeight + 3) & ~3;                           // Height aligned to 4.
+    nvDebugCheck(vertexMapWidth >= vertexMapHeight);
+
+    nvDebug("Reduced vertex count from %d to %d.\n", chartVertexCount, texelCount);
+
+#if 0
+    // This lays down the clustered vertices linearly.
+    for (uint i = 0; i < chartVertexCount; i++) {
+        HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(i);
+
+        int idx = vertexIndexArray[i];
+
+        vertex->tex.x = float(idx % vertexMapWidth);
+        vertex->tex.y = float(idx / vertexMapWidth);
+    }
+#else
+    // Lay down the clustered vertices in morton order.
+
+    Array<uint> texelCodes;
+    texelCodes.resize(texelCount);
+
+    // For each texel, assign one morton code.
+    uint texelCode = 0;
+    for (uint i = 0; i < texelCount; i++) {
+        uint x, y;
+        do {
+            x = decodeMorton2X(texelCode);
+            y = decodeMorton2Y(texelCode);
+            texelCode++;
+        } while (x >= U32(vertexMapWidth) || y >= U32(vertexMapHeight));
+
+        texelCodes[i] = texelCode - 1;
+    }
+
+    for (uint i = 0; i < chartVertexCount; i++) {
+        HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(i);
+
+        int idx = vertexIndexArray[i];
+        if (idx != -1) {
+            uint texelCode = texelCodes[idx];
+            uint x = decodeMorton2X(texelCode);
+            uint y = decodeMorton2Y(texelCode);
+
+            vertex->tex.x = float(x);
+            vertex->tex.y = float(y);
+        }
+    }
+
+#endif
+   
+#endif
+
+}
+
+
+
 static void getBoundaryEdges(HalfEdge::Mesh * mesh, Array<HalfEdge::Edge *> & boundaryEdges)
 {
     nvDebugCheck(mesh != NULL);
@@ -745,7 +1144,6 @@ static void getBoundaryEdges(HalfEdge::Mesh * mesh, Array<HalfEdge::Edge *> & bo
     }
 }
 
-#include "nvmath/Fitting.h"
 
 bool Chart::closeLoop(uint start, const Array<HalfEdge::Edge *> & loop)
 {
@@ -808,6 +1206,8 @@ bool Chart::closeLoop(uint start, const Array<HalfEdge::Edge *> & loop)
 
 bool Chart::closeHoles()
 {
+    nvDebugCheck(!m_isVertexMapped);
+
     Array<HalfEdge::Edge *> boundaryEdges;
     getBoundaryEdges(m_unifiedMesh.ptr(), boundaryEdges);
 
@@ -1075,10 +1475,41 @@ bool Chart::closeHoles()
 
 // Transfer parameterization from unified mesh to chart mesh.
 void Chart::transferParameterization() {
+    nvDebugCheck(!m_isVertexMapped);
+
     uint vertexCount = m_chartMesh->vertexCount();
     for (uint v = 0; v < vertexCount; v++) {
         HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(v);
         HalfEdge::Vertex * unifiedVertex = m_unifiedMesh->vertexAt(mapChartVertexToUnifiedVertex(v));
         vertex->tex = unifiedVertex->tex;
     }
+}
+
+float Chart::computeSurfaceArea() const {
+    return nv::computeSurfaceArea(m_chartMesh.ptr()) * scale;
+}
+
+float Chart::computeParametricArea() const {
+    // This only makes sense in parameterized meshes.
+    nvDebugCheck(m_isDisk);            
+    nvDebugCheck(!m_isVertexMapped);
+
+    return nv::computeParametricArea(m_chartMesh.ptr());
+}
+
+Vector2 Chart::computeParametricBounds() const {
+    // This only makes sense in parameterized meshes.
+    nvDebugCheck(m_isDisk);
+    nvDebugCheck(!m_isVertexMapped);
+
+    Box bounds;
+    bounds.clearBounds();
+
+    uint vertexCount = m_chartMesh->vertexCount();
+    for (uint v = 0; v < vertexCount; v++) {
+        HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(v);
+        bounds.addPointToBounds(Vector3(vertex->tex, 0));
+    }
+
+    return bounds.extents().xy();
 }

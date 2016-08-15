@@ -3,7 +3,7 @@
 #endif
 
 #include <stdint.h> // uint8_t, int8_t, ... uintptr_t
-#include <cstddef> // operator new, size_t, NULL
+#include <stddef.h> // operator new, size_t, NULL
 
 // Function linkage
 #define DLL_IMPORT
@@ -25,14 +25,15 @@
 #endif
 
 #define NV_FASTCALL     __attribute__((fastcall))
-#define NV_FORCEINLINE  __attribute__((always_inline))
+//#if __GNUC__ > 3
+// It seems that GCC does not assume always_inline implies inline. I think this depends on the GCC version :(
+#define NV_FORCEINLINE  inline __attribute__((always_inline))
+//#else
+// Some compilers complain that inline and always_inline are redundant.
+//#define NV_FORCEINLINE  __attribute__((always_inline))
+//#endif
 #define NV_DEPRECATED   __attribute__((deprecated))
-// TODO(casey): There was no NV_THREAD_LOCAL defined in here
-// for no obvious reason, so I added this one, but I don't
-// actually _know_ anything about this library, so somebody
-// who does should probably test it.
 #define NV_THREAD_LOCAL __thread 
-
 
 #if __GNUC__ > 2
 #define NV_PURE     __attribute__((pure))
@@ -56,22 +57,3 @@
 #endif
 
 #define restrict    __restrict__
-
-/*
-// Type definitions
-typedef unsigned char       uint8;
-typedef signed char         int8;
-
-typedef unsigned short      uint16;
-typedef signed short        int16;
-
-typedef unsigned int        uint32;
-typedef signed int          int32;
-
-typedef unsigned long long  uint64;
-typedef signed long long    int64;
-
-// Aliases
-typedef uint32              uint;
-*/
-

@@ -16,6 +16,18 @@
 
 namespace nv 
 {
+    template <typename T>
+    NV_FORCEINLINE T & Array<T>::append()
+    {
+        uint old_size = m_size;
+        uint new_size = m_size + 1;
+
+        setArraySize(new_size);
+
+        construct_range(m_buffer, new_size, old_size);
+
+        return m_buffer[old_size]; // Return reference to last element.
+    }
 
     // Push an element at the end of the vector.
     template <typename T>
@@ -79,10 +91,31 @@ namespace nv
         resize( m_size - 1 );
     }
     template <typename T>
-    NV_FORCEINLINE void Array<T>::popBack()
+    NV_FORCEINLINE void Array<T>::popBack(uint count)
     {
-        pop_back();
+        nvDebugCheck(m_size >= count);
+        resize(m_size - count);
     }
+
+    template <typename T>
+    NV_FORCEINLINE void Array<T>::popFront(uint count)
+    {
+        nvDebugCheck(m_size >= count);
+        //resize(m_size - count);
+
+        if (m_size == count) {
+            clear();
+        }
+        else {
+            destroy_range(m_buffer, 0, count);
+
+            memmove(m_buffer, m_buffer + count, sizeof(T) * (m_size - count));
+
+            m_size -= count;
+        }
+
+    }
+
 
     // Get back element.
     template <typename T>
@@ -211,7 +244,7 @@ namespace nv
     void Array<T>::replaceWithLast(uint index)
     {
         nvDebugCheck( index < m_size );
-        nv::swap(m_buffer[index], back());
+        nv::swap(m_buffer[index], back());      // @@ Is this OK when index == size-1?
         (m_buffer+m_size-1)->~T();
         m_size--;
     }
@@ -406,9 +439,14 @@ namespace nv
 template <typename T> inline int item_count(const nv::Array<T> & array) { return array.count(); }
 template <typename T> inline const T & item_at(const nv::Array<T> & array, int i) { return array.at(i); }
 template <typename T> inline T & item_at(nv::Array<T> & array, int i) { return array.at(i); }
+template <typename T> inline int item_advance(const nv::Array<T> & array, int i) { return ++i; }
+template <typename T> inline int item_remove(nv::Array<T> & array, int i) { array.replaceWithLast(i); return i - 1; }
+
 template <typename T> inline int item_count(const nv::Array<T> * array) { return array->count(); }
 template <typename T> inline const T & item_at(const nv::Array<T> * array, int i) { return array->at(i); }
 template <typename T> inline T & item_at(nv::Array<T> * array, int i) { return array->at(i); }
+template <typename T> inline int item_advance(const nv::Array<T> * array, int i) { return ++i; }
+template <typename T> inline int item_remove(nv::Array<T> * array, int i) { array->replaceWithLast(i); return i - 1; }
 
 
 #endif // NV_CORE_ARRAY_INL

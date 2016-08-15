@@ -14,6 +14,7 @@ namespace nv
     class NVIMAGE_CLASS BitMap
     {
     public:
+        BitMap() : m_width(0), m_height(0) {}
         BitMap(uint w, uint h) : m_width(w), m_height(h), m_bitArray(w*h) {}
 
         uint width() const { return m_width; }

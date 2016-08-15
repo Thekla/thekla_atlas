@@ -6,6 +6,7 @@
 
 #include "nvcore/Array.h"
 #include "nvcore/Ptr.h"
+#include "nvmath/Vector.h"
 #include "nvmesh/nvmesh.h"
 #include "nvmesh/halfedge/Mesh.h"
 
@@ -15,6 +16,8 @@ namespace nv
     namespace HalfEdge { class Mesh; }
 
     class Chart;
+    class MeshCharts;
+    class VertexMap;
 
     struct SegmentationSettings
     {
@@ -36,31 +39,65 @@ namespace nv
     {
     public:
 
-        Atlas(const HalfEdge::Mesh * mesh);
+        Atlas();
         ~Atlas();
 
-        uint chartCount() const;
-        uint vertexCount () const { return m_totalVertexCount; }
+        uint meshCount() const { return m_meshChartsArray.count(); }
+        const MeshCharts * meshAt(uint i) const { return m_meshChartsArray[i]; }
+        MeshCharts * meshAt(uint i) { return m_meshChartsArray[i]; }
 
+        uint chartCount() const;
         const Chart * chartAt(uint i) const;
         Chart * chartAt(uint i);
 
+        // Add mesh charts and takes ownership.
+        void addMeshCharts(MeshCharts * meshCharts);
+
+        void extractCharts(const HalfEdge::Mesh * mesh);
+        void computeCharts(const HalfEdge::Mesh * mesh, const SegmentationSettings & settings, const Array<uint> & unchartedMaterialArray);
+
+
         // Compute a trivial seamless texture similar to ZBrush.
         //bool computeSeamlessTextureAtlas(bool groupFaces = true, bool scaleTiles = false, uint w = 1024, uint h = 1024);
+
+        void parameterizeCharts();
+
+        // Pack charts in the smallest possible rectangle.
+        float packCharts(int quality, float texelArea, bool blockAlign, bool conservative);
+
+    private:
+
+        Array<MeshCharts *> m_meshChartsArray;
+
+    };
+
+
+    // Set of charts corresponding to a single mesh.
+    class MeshCharts
+    {
+    public:
+        MeshCharts(const HalfEdge::Mesh * mesh);
+        ~MeshCharts();
+
+        uint chartCount() const { return m_chartArray.count(); }
+        uint vertexCount () const { return m_totalVertexCount; }
+
+        const Chart * chartAt(uint i) const { return m_chartArray[i]; }
+        Chart * chartAt(uint i) { return m_chartArray[i]; }
+
+        void computeVertexMap(const Array<uint> & unchartedMaterialArray);
 
         // Extract the charts of the input mesh.
         void extractCharts();
 
         // Compute charts using a simple segmentation algorithm.
-        void computeCharts(const SegmentationSettings & settings);
+        void computeCharts(const SegmentationSettings & settings, const Array<uint> & unchartedMaterialArray);
 
         void parameterizeCharts();
 
-        // Pack charts in the smallest possible rectangle.
-        float packCharts(int quality, float texelArea, int padding);
-
         uint faceChartAt(uint i) const { return m_faceChart[i]; }
         uint faceIndexWithinChartAt(uint i) const { return m_faceIndex[i]; }
+
         uint vertexCountBeforeChartAt(uint i) const { return m_chartVertexCountPrefixSum[i]; }
 
     private:
@@ -68,13 +105,12 @@ namespace nv
         const HalfEdge::Mesh * m_mesh;
 
         Array<Chart *> m_chartArray;
+        
         Array<uint> m_chartVertexCountPrefixSum;
+        uint m_totalVertexCount;
 
         Array<uint> m_faceChart; // the chart of every face of the input mesh.
         Array<uint> m_faceIndex; // the index within the chart for every face of the input mesh.
-
-        uint m_totalVertexCount;
-
     };
 
 
@@ -86,10 +122,12 @@ namespace nv
         Chart();
 
         void build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceArray);
+        void buildVertexMap(const HalfEdge::Mesh * originalMesh, const Array<uint> & unchartedMaterialArray);
 
         bool closeHoles();
 
         bool isDisk() const { return m_isDisk; }
+        bool isVertexMapped() const { return m_isVertexMapped; }
 
         uint vertexCount() const { return m_chartMesh->vertexCount(); }
         uint colocalVertexCount() const { return m_unifiedMesh->vertexCount(); }
@@ -107,9 +145,18 @@ namespace nv
         uint mapChartVertexToOriginalVertex(uint i) const { return m_chartToOriginalMap[i]; }
         uint mapChartVertexToUnifiedVertex(uint i) const { return m_chartToUnifiedMap[i]; }
 
+        const Array<uint> & faceArray() const { return m_faceArray; }
+
         void transferParameterization();
 
+        float computeSurfaceArea() const;
+        float computeParametricArea() const;
+        Vector2 computeParametricBounds() const;
+
+
         float scale;
+        uint vertexMapWidth;
+        uint vertexMapHeight;
 
     private:
 
@@ -120,6 +167,7 @@ namespace nv
         AutoPtr<HalfEdge::Mesh> m_unifiedMesh;
 
         bool m_isDisk;
+        bool m_isVertexMapped;
 
         // List of faces of the original mesh that belong to this chart.
         Array<uint> m_faceArray;
@@ -128,9 +176,7 @@ namespace nv
         Array<uint> m_chartToOriginalMap;
 
         Array<uint> m_chartToUnifiedMap;
-
     };
-
 
 } // nv namespace
 

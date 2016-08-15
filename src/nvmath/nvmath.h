@@ -10,9 +10,16 @@
 
 #include <math.h>
 
-#if NV_OS_WIN32 || NV_OS_XBOX
+#if NV_OS_WIN32 || NV_OS_XBOX || NV_OS_DURANGO
 #include <float.h>  // finite, isnan
 #endif
+
+#if NV_CPU_X86 || NV_CPU_X86_64
+    //#include <intrin.h>
+    #include <xmmintrin.h>
+#endif
+
+
 
 // Function linkage
 #if NVMATH_SHARED
@@ -27,6 +34,37 @@
 #define NVMATH_API
 #define NVMATH_CLASS
 #endif // NVMATH_SHARED
+
+// Set some reasonable defaults.
+#ifndef NV_USE_ALTIVEC
+#   define NV_USE_ALTIVEC NV_CPU_PPC
+//#   define NV_USE_ALTIVEC defined(__VEC__)
+#endif
+
+#ifndef NV_USE_SSE
+#   if NV_CPU_X86_64
+        // x64 always supports at least SSE2
+#       define NV_USE_SSE 2
+#   elif NV_CC_MSVC && defined(_M_IX86_FP)
+        // Also on x86 with the /arch:SSE flag in MSVC.
+#       define NV_USE_SSE _M_IX86_FP       // 1=SSE, 2=SS2
+#   elif defined(__SSE__)
+#       define NV_USE_SSE 1
+#   elif defined(__SSE2__)
+#       define NV_USE_SSE 2
+#   else
+        // Otherwise we assume no SSE.
+#       define NV_USE_SSE 0
+#   endif
+#endif
+
+
+// Internally set NV_USE_SIMD when either altivec or sse is available.
+#if NV_USE_ALTIVEC && NV_USE_SSE
+#	error "Cannot enable both altivec and sse!"
+#endif
+
+
 
 #ifndef PI
 #define PI                  float(3.1415926535897932384626433833)
@@ -91,12 +129,14 @@ inline float asinf_assert(const float f)
 }
 
 // Replace default functions with asserting ones.
+#if !NV_CC_MSVC || (NV_CC_MSVC && (_MSC_VER < 1700))    // IC: Apparently this was causing problems in Visual Studio 2012. See Issue 194: https://code.google.com/p/nvidia-texture-tools/issues/detail?id=194
 #define sqrt sqrt_assert
 #define sqrtf sqrtf_assert
 #define acos acos_assert
 #define acosf acosf_assert
 #define asin asin_assert
 #define asinf asinf_assert
+#endif
 
 #if NV_CC_MSVC
 NV_FORCEINLINE float log2f(float x)
@@ -130,7 +170,7 @@ namespace nv
 
     inline bool isFinite(const float f)
     {
-#if NV_OS_WIN32 || NV_OS_XBOX
+#if NV_OS_WIN32 || NV_OS_XBOX || NV_OS_DURANGO
         return _finite(f) != 0;
 #elif NV_OS_DARWIN || NV_OS_FREEBSD || NV_OS_OPENBSD || NV_OS_ORBIS
         return isfinite(f);
@@ -145,7 +185,7 @@ namespace nv
 
     inline bool isNan(const float f)
     {
-#if NV_OS_WIN32 || NV_OS_XBOX
+#if NV_OS_WIN32 || NV_OS_XBOX || NV_OS_DURANGO
         return _isnan(f) != 0;
 #elif NV_OS_DARWIN || NV_OS_FREEBSD || NV_OS_OPENBSD || NV_OS_ORBIS
         return isnan(f);
@@ -156,13 +196,18 @@ namespace nv
 #endif
     }
 
-    inline uint log2(uint i)
+    inline uint log2(uint32 i)
     {
-        uint value = 0;
-        while( i >>= 1 ) {
-            value++;
-        }
+        uint32 value = 0;
+        while( i >>= 1 ) value++;
         return value;
+    }
+
+    inline uint log2(uint64 i)
+    {
+        uint64 value = 0;
+        while (i >>= 1) value++;
+        return U32(value);
     }
 
     inline float lerp(float f0, float f1, float t)
@@ -176,26 +221,6 @@ namespace nv
 
     inline float cube(float f) { return f * f * f; }
     inline int cube(int i) { return i * i * i; }
-
-    // @@ Float to int conversions to be optimized at some point. See:
-    // http://cbloomrants.blogspot.com/2009/01/01-17-09-float-to-int.html
-    // http://www.stereopsis.com/sree/fpu2006.html
-    // http://assemblyrequired.crashworks.org/2009/01/12/why-you-should-never-cast-floats-to-ints/
-    // http://chrishecker.com/Miscellaneous_Technical_Articles#Floating_Point
-    inline int iround(float f)
-    {
-        return int(floorf(f + 0.5f));
-    }
-
-    inline int ifloor(float f)
-    {
-        return int(floorf(f));
-    }
-
-    inline int iceil(float f)
-    {
-        return int(ceilf(f));
-    }
 
     inline float frac(float f)
     {
@@ -235,24 +260,10 @@ namespace nv
 
     inline int sign(float a)
     {
-        if (a > 0.0f) return 1;
-        if (a < 0.0f) return -1;
-        return 0;
-    }
-
-    // I'm always confused about which quantizer to use. I think we should choose a quantizer based on how the values are expanded later and this is generally using the 'exact endpoints' rule.
-
-    // Quantize a float in the [0,1] range, using exact end points or uniform bins.
-    inline float quantizeFloat(float x, uint bits, bool exactEndPoints = true) {
-        nvDebugCheck(bits <= 16);
-
-        float range = float(1 << bits);
-        if (exactEndPoints) {
-            return floorf(x * (range-1) + 0.5f) / (range-1);
-        }
-        else {
-            return (floorf(x * range) + 0.5f) / range;
-        }
+        return (a > 0) - (a < 0);
+        //if (a > 0.0f) return 1;
+        //if (a < 0.0f) return -1;
+        //return 0;
     }
 
     union Float754 {
@@ -278,6 +289,49 @@ namespace nv
         f.value = x;
         return (f.field.biasedexponent - 127);
     }
+
+
+    // FloatRGB9E5
+    union Float3SE {
+        uint32 v;
+        struct {
+        #if NV_BIG_ENDIAN
+            uint32 e : 5;
+            uint32 zm : 9;
+            uint32 ym : 9;
+            uint32 xm : 9;
+        #else
+            uint32 xm : 9;
+            uint32 ym : 9;
+            uint32 zm : 9;
+            uint32 e : 5;
+        #endif
+        };
+    };
+
+    // FloatR11G11B10
+    union Float3PK {
+        uint32 v;
+        struct {
+        #if NV_BIG_ENDIAN
+            uint32 ze : 5;
+            uint32 zm : 5;
+            uint32 ye : 5;
+            uint32 ym : 6;
+            uint32 xe : 5;
+            uint32 xm : 6;
+        #else
+            uint32 xm : 6;
+            uint32 xe : 5;
+            uint32 ym : 6;
+            uint32 ye : 5;
+            uint32 zm : 5;
+            uint32 ze : 5;
+        #endif
+        };
+    };
+
+
 } // nv
 
 #endif // NV_MATH_H

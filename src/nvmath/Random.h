@@ -30,9 +30,12 @@ namespace nv
         uint getRange( uint max )
         {
             if (max == 0) return 0;
+            if (max == NV_UINT32_MAX) return get();
+
+            const uint np2 = nextPowerOfTwo( max+1 ); // @@ This fails if max == NV_UINT32_MAX
+            const uint mask = np2 - 1;
             uint n;
-            uint np2 = nextPowerOfTwo( max+1 );
-            do { n = get() & (np2-1); } while( n > max );
+            do { n = get() & mask; } while( n > max );
             return n;
         }
 
@@ -68,7 +71,7 @@ namespace nv
         */
 
         /// Get the max value of the random number.
-        uint max() const { return 4294967295U; }
+        uint max() const { return NV_UINT32_MAX; }
 
         // Get a random seed.
         static uint randomSeed();

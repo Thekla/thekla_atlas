@@ -195,7 +195,7 @@ namespace nv
     }
 
     // Inverse using Cramer's rule.
-    inline Matrix3 inverse(const Matrix3 & m)
+    inline Matrix3 inverseCramer(const Matrix3 & m)
     {
         const float det = m.determinant();
         if (equal(det, 0.0f, 0.0f)) {
@@ -321,6 +321,22 @@ namespace nv
     {
         nvDebugCheck(i < 4);
         return Vector4(get(0, i), get(1, i), get(2, i), get(3, i));
+    }
+
+    inline void Matrix::zero()
+    {
+        m_data[0] = 0; m_data[1] = 0; m_data[2] = 0; m_data[3] = 0;
+        m_data[4] = 0; m_data[5] = 0; m_data[6] = 0; m_data[7] = 0;
+        m_data[8] = 0; m_data[9] = 0; m_data[10] = 0; m_data[11] = 0;
+        m_data[12] = 0; m_data[13] = 0; m_data[14] = 0; m_data[15] = 0;
+    }
+
+    inline void Matrix::identity()
+    {
+        m_data[0] = 1; m_data[1] = 0; m_data[2] = 0; m_data[3] = 0;
+        m_data[4] = 0; m_data[5] = 1; m_data[6] = 0; m_data[7] = 0;
+        m_data[8] = 0; m_data[9] = 0; m_data[10] = 1; m_data[11] = 0;
+        m_data[12] = 0; m_data[13] = 0; m_data[14] = 0; m_data[15] = 1;
     }
 
     // Apply scale.
@@ -575,7 +591,7 @@ namespace nv
     }
 
     // Inverse using Cramer's rule.
-    inline Matrix inverse(Matrix::Arg m)
+    inline Matrix inverseCramer(Matrix::Arg m)
     {
         Matrix r;
         r.data( 0) = m.data(6)*m.data(11)*m.data(13) - m.data(7)*m.data(10)*m.data(13) + m.data(7)*m.data(9)*m.data(14) - m.data(5)*m.data(11)*m.data(14) - m.data(6)*m.data(9)*m.data(15) + m.data(5)*m.data(10)*m.data(15);
@@ -652,6 +668,35 @@ namespace nv
         m.apply(b);
         return m;
     }
+
+    inline void Matrix::operator+=(const Matrix & m)
+    {
+        for(int i = 0; i < 16; i++) {
+            m_data[i] += m.m_data[i];
+        }
+    }
+
+    inline void Matrix::operator-=(const Matrix & m)
+    {
+        for(int i = 0; i < 16; i++) {
+            m_data[i] -= m.m_data[i];
+        }
+    }
+
+    inline Matrix operator+(const Matrix & a, const Matrix & b)
+    {
+        Matrix m = a;
+        m += b;
+        return m;
+    }
+
+    inline Matrix operator-(const Matrix & a, const Matrix & b)
+    {
+        Matrix m = a;
+        m -= b;
+        return m;
+    }
+
 
 } // nv namespace
 
@@ -749,7 +794,7 @@ v1 = FXVector3.Cross(v3, v2);
 v1.Normalize();
 
 Matrix R = Matrix::Identity;
-R[0, 0] = v3.X; // Not sure this is in the correct order...
+R[0, 0] = v3.X;	// Not sure this is in the correct order...
 R[1, 0] = v3.Y;
 R[2, 0] = v3.Z;
 R[0, 1] = v1.X;

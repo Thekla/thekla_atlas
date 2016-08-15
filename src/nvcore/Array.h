@@ -96,8 +96,11 @@ namespace nv
         /// Get vector pointer.
         NV_FORCEINLINE T * buffer() { return m_buffer; }
 
+        /// Provide begin/end pointers for C++11 range-based for loops.
         NV_FORCEINLINE T * begin() { return m_buffer; }
         NV_FORCEINLINE T * end() { return m_buffer + m_size; }
+        NV_FORCEINLINE const T * begin() const { return m_buffer; }
+        NV_FORCEINLINE const T * end() const { return m_buffer + m_size; }
 
         /// Is vector empty.
         NV_FORCEINLINE bool isEmpty() const { return m_size == 0; }
@@ -106,12 +109,14 @@ namespace nv
         NV_FORCEINLINE bool isNull() const { return m_buffer == NULL; }
 
 
+        T & append();
         void push_back( const T & val );
         void pushBack( const T & val );
         Array<T> & append( const T & val );
         Array<T> & operator<< ( T & t );
         void pop_back();
-        void popBack();
+        void popBack(uint count = 1);
+        void popFront(uint count = 1);
         const T & back() const;
         T & back();
         const T & front() const;
@@ -143,7 +148,7 @@ namespace nv
         NV_FORCEINLINE bool isDone(const PseudoIndex & i) const { nvDebugCheck(i <= this->m_size); return i == this->m_size; }
         NV_FORCEINLINE void advance(PseudoIndex & i) const { nvDebugCheck(i <= this->m_size); i++; }
 
-#if NV_CC_MSVC
+#if NV_NEED_PSEUDOINDEX_WRAPPER
         NV_FORCEINLINE T & operator[]( const PseudoIndexWrapper & i ) {
             return m_buffer[i(this)];
         }

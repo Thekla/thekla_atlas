@@ -16,6 +16,7 @@ void BitMap::resize(uint w, uint h, bool initValue)
     {
         for (uint x = 0; x < m_width; x++)
         {
+            //tmp.setBitAt(y*w + x, bitAt(x, y));
             if (bitAt(x, y) != initValue) tmp.toggleBitAt(y*w + x);
         }
     }

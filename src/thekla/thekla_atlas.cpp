@@ -10,6 +10,7 @@
 #include "nvmesh/param/Atlas.h"
 
 #include "nvmath/Vector.inl"
+#include "nvmath/ftoi.h"
 
 #include "nvcore/Array.inl"
 
@@ -76,16 +77,21 @@ static Atlas_Output_Mesh * mesh_atlas_to_output(const HalfEdge::Mesh * mesh, con
 
     Atlas_Output_Mesh * output = new Atlas_Output_Mesh;
 
+    const MeshCharts * charts = atlas.meshAt(0);
+
     // Allocate vertices.
-    const int vertex_count = atlas.vertexCount();
+    const int vertex_count = charts->vertexCount();
     output->vertex_count = vertex_count;
     output->vertex_array = new Atlas_Output_Vertex[vertex_count];
 
+    int w = 0;
+    int h = 0;
+
     // Output vertices.
-    const int chart_count = atlas.chartCount();
+    const int chart_count = charts->chartCount();
     for (int i = 0; i < chart_count; i++) {
-        const Chart * chart = atlas.chartAt(i);
-        uint vertexOffset = atlas.vertexCountBeforeChartAt(i);
+        const Chart * chart = charts->chartAt(i);
+        uint vertexOffset = charts->vertexCountBeforeChartAt(i);
 
         const uint chart_vertex_count = chart->vertexCount();
         for (uint v = 0; v < chart_vertex_count; v++) {
@@ -97,6 +103,8 @@ static Atlas_Output_Mesh * mesh_atlas_to_output(const HalfEdge::Mesh * mesh, con
             Vector2 uv = chart->chartMesh()->vertexAt(v)->tex;
             output_vertex.uv[0] = uv.x;
             output_vertex.uv[1] = uv.y;
+            w = max(w, ftoi_ceil(uv.x));
+            h = max(h, ftoi_ceil(uv.y));
         }
     }
 
@@ -104,13 +112,13 @@ static Atlas_Output_Mesh * mesh_atlas_to_output(const HalfEdge::Mesh * mesh, con
     output->index_count = face_count * 3;
     output->index_array = new int[face_count * 3];
 
-        // Set face indices.
+    // Set face indices.
     for (int f = 0; f < face_count; f++) {
-        uint c = atlas.faceChartAt(f);
-        uint i = atlas.faceIndexWithinChartAt(f);
-        uint vertexOffset = atlas.vertexCountBeforeChartAt(c);
+        uint c = charts->faceChartAt(f);
+        uint i = charts->faceIndexWithinChartAt(f);
+        uint vertexOffset = charts->vertexCountBeforeChartAt(c);
 
-        const Chart * chart = atlas.chartAt(c);
+        const Chart * chart = charts->chartAt(c);
         nvDebugCheck(chart->faceAt(i) == f);
 
         const HalfEdge::Face * face = chart->chartMesh()->faceAt(i);
@@ -121,10 +129,9 @@ static Atlas_Output_Mesh * mesh_atlas_to_output(const HalfEdge::Mesh * mesh, con
         output->index_array[3*f+2] = vertexOffset + edge->next->next->vertex->id;
     }
 
-    // @@ Init these!
-    *error = Atlas_Error_Not_Implemented;
-    output->atlas_width = 0;
-    output->atlas_height = 0;
+    *error = Atlas_Error_Success;
+    output->atlas_width = w;
+    output->atlas_height = h;
 
     return output;
 }
@@ -148,7 +155,8 @@ void Thekla::atlas_set_default_options(Atlas_Options * options) {
         options->packer = Atlas_Packer_Default;
         options->packer_options.witness.packing_quality = 0;
         options->packer_options.witness.texel_area = 8;
-        options->packer_options.witness.texel_padding = 1;
+        options->packer_options.witness.block_align = true;
+        options->packer_options.witness.conservative = false;
     }
 }
 
@@ -203,10 +211,9 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
         return NULL;
     }
 
+    Atlas atlas;
 
     // Charter.
-    Atlas atlas(mesh.ptr());
-    
     if (options->charter == Atlas_Charter_Extract) {
         return set_error(error, Atlas_Error_Not_Implemented);
     }
@@ -220,9 +227,9 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
         segmentation_settings.maxChartArea = options->charter_options.witness.max_chart_area;
         segmentation_settings.maxBoundaryLength = options->charter_options.witness.max_boundary_length;
 
-        atlas.computeCharts(segmentation_settings);
+        Array<uint> uncharted_materials;
+        atlas.computeCharts(mesh.ptr(), segmentation_settings, uncharted_materials);
     }
-
 
     // Mapper.
     if (options->mapper == Atlas_Mapper_LSCM) {
@@ -234,9 +241,10 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
     if (options->packer == Atlas_Packer_Witness) {
         int packing_quality = options->packer_options.witness.packing_quality;
         float texel_area = options->packer_options.witness.texel_area;
-        int texel_padding = options->packer_options.witness.texel_padding;
+        int block_align = options->packer_options.witness.block_align;
+        int conservative = options->packer_options.witness.conservative;
 
-        /*float utilization =*/ atlas.packCharts(packing_quality, texel_area, texel_padding);
+        /*float utilization =*/ atlas.packCharts(packing_quality, texel_area, block_align, conservative);
     }
 
 

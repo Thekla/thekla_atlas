@@ -4,10 +4,10 @@
 #ifndef NV_MESH_MESHBOUNDS_H
 #define NV_MESH_MESHBOUNDS_H
 
-#include "nvmath/Sphere.h"
-#include "nvmath/Box.h"
+#include <nvmath/Sphere.h>
+#include <nvmath/Box.h>
 
-#include "nvmesh/nvmesh.h"
+#include <nvmesh/nvmesh.h>
 
 namespace nv
 {

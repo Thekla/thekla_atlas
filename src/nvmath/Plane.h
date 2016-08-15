@@ -25,6 +25,7 @@ namespace nv
 
         Vector3 vector() const;
         float offset() const;
+        Vector3 normal() const;
 
         void operator*=(float s);
 

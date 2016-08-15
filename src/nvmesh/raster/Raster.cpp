@@ -13,9 +13,7 @@
 #include "nvcore/Utils.h" // min, max
 
 #include "nvmath/Vector.inl"
-
-//#include "nvimage/HoleFilling.h"
-//#include "nvimage/FloatImage.h"
+#include "nvmath/ftoi.h"
 
 
 #define RA_EPSILON		0.00001f
@@ -66,6 +64,7 @@ namespace
 
         bool draw(const Vector2 & extents, bool enableScissors, SamplingCallback cb, void * param);
         bool drawAA(const Vector2 & extents, bool enableScissors, SamplingCallback cb, void * param);
+        bool drawC(const Vector2 & extents, bool enableScissors, SamplingCallback cb, void * param);
         void flipBackface();
         void computeUnitInwardNormals();
 
@@ -402,14 +401,14 @@ namespace
                     float CY3 = C3 + n3.x * x0 + n3.y * y0;
                     Vector3 texRow = t1 + dy*(y0 - v1.y) + dx*(x0 - v1.x);	                  	
 
-                    for(float y = y0; y < y0 + BK_SIZE; y++)
+                    for(float y = y0; y < y0 + BK_SIZE; y++) // @@ This is not clipping to scissor rectangle correctly.
                     {
                         float CX1 = CY1;
                         float CX2 = CY2;
                         float CX3 = CY3;
                         Vector3 tex = texRow;
 
-                        for (float x = x0; x < x0 + BK_SIZE; x++)
+                        for (float x = x0; x < x0 + BK_SIZE; x++)   // @@ This is not clipping to scissor rectangle correctly.
                         {
                             if (CX1 >= PX_INSIDE && CX2 >= PX_INSIDE && CX3 >= PX_INSIDE) 
                             {
@@ -463,14 +462,18 @@ namespace
 
 
 /// Process the given triangle.
-bool nv::Raster::drawTriangle(bool antialias, Vector2::Arg extents, bool enableScissors, const Vector2 v[3], SamplingCallback cb, void * param)
+bool nv::Raster::drawTriangle(Mode mode, Vector2::Arg extents, bool enableScissors, const Vector2 v[3], SamplingCallback cb, void * param)
 {
     Triangle tri(v[0], v[1], v[2], Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1));
     
+    // @@ It would be nice to have a conservative drawing mode that enlarges the triangle extents by one texel and is able to handle degenerate triangles.
+    // @@ Maybe the simplest thing to do would be raster triangle edges.
+
     if (tri.valid) {
-        if (antialias) {
+        if (mode == Mode_Antialiased) {
             return tri.drawAA(extents, enableScissors, cb, param);
-        } else {
+        } 
+        if (mode == Mode_Nearest) {
             return tri.draw(extents, enableScissors, cb, param);
         }
     }
@@ -484,7 +487,7 @@ inline static float triangleArea(Vector2::Arg v1, Vector2::Arg v2, Vector2::Arg 
 }
 
 /// Process the given quad.
-bool nv::Raster::drawQuad(bool antialias, Vector2::Arg extents, bool enableScissors, const Vector2 v[4], SamplingCallback cb, void * param)
+bool nv::Raster::drawQuad(Mode mode, Vector2::Arg extents, bool enableScissors, const Vector2 v[4], SamplingCallback cb, void * param)
 {
     bool sign0 = triangleArea(v[0], v[1], v[2]) > 0.0f;
     bool sign1 = triangleArea(v[0], v[2], v[3]) > 0.0f;
@@ -495,7 +498,7 @@ bool nv::Raster::drawQuad(bool antialias, Vector2::Arg extents, bool enableSciss
         Triangle tri1(v[0], v[2], v[3], Vector3(0,0,0), Vector3(1,1,0), Vector3(0,1,0));
 
         if (tri0.valid && tri1.valid) {
-            if (antialias) {
+            if (mode == Mode_Antialiased) {
                 return tri0.drawAA(extents, enableScissors, cb, param) && tri1.drawAA(extents, enableScissors, cb, param);
             } else {
                 return tri0.draw(extents, enableScissors, cb, param) && tri1.draw(extents, enableScissors, cb, param);
@@ -508,7 +511,7 @@ bool nv::Raster::drawQuad(bool antialias, Vector2::Arg extents, bool enableSciss
         Triangle tri1(v[1], v[2], v[3], Vector3(1,0,0), Vector3(1,1,0), Vector3(0,1,0));
 
         if (tri0.valid && tri1.valid) {
-            if (antialias) {
+            if (mode == Mode_Antialiased) {
                 return tri0.drawAA(extents, enableScissors, cb, param) && tri1.drawAA(extents, enableScissors, cb, param);
             } else {
                 return tri0.draw(extents, enableScissors, cb, param) && tri1.draw(extents, enableScissors, cb, param);
@@ -520,10 +523,10 @@ bool nv::Raster::drawQuad(bool antialias, Vector2::Arg extents, bool enableSciss
 }
 
 
-static void drawPoint(const Vector2 & p, const Vector2 v[2], LineSamplingCallback cb, void * param) {
+static bool drawPoint(const Vector2 & p, const Vector2 v[2], LineSamplingCallback cb, void * param) {
 
-    int x = nv::iround(p.x);
-    int y = nv::iround(p.y);
+    int x = ftoi_round(p.x);
+    int y = ftoi_round(p.y);
     Vector2 ip = Vector2(float(x) + 0.5f, float(y) + 0.5f);
 
     float t;
@@ -551,13 +554,16 @@ static void drawPoint(const Vector2 & p, const Vector2 v[2], LineSamplingCallbac
 
     float d = distance(ip, projection);
 
-    cb(param, x, y, t, saturate(1-d));
+    return cb(param, x, y, t, saturate(1-d));
 }
 
 
-bool nv::Raster::drawLine(bool antialias, Vector2::Arg extents, bool enableScissors, const Vector2 v[2], LineSamplingCallback cb, void * param)
+void nv::Raster::drawLine(bool antialias, Vector2::Arg extents, bool enableScissors, const Vector2 v[2], LineSamplingCallback cb, void * param)
 {
-    // @@ Very crappy DDA implementation.
+    nvCheck(antialias == true);         // @@ Not implemented.
+    //nvCheck(enableScissors == false); // @@ Not implemented.
+
+    // Very crappy DDA implementation.
 
     Vector2 p = v[0];
     Vector2 dp, dpdy;
@@ -566,24 +572,22 @@ bool nv::Raster::drawLine(bool antialias, Vector2::Arg extents, bool enableSciss
     float dy = v[1].y - v[0].y;
     int n;
 
-    // @@ Clip segment to extents.
-
     // Degenerate line.
-    if (dx == 0 && dy == 0) return true;
+    if (dx == 0 && dy == 0) return;
 
-    if (fabs(dx) >= fabs(dy)) {
-        n = iround(fabs(dx));
-        dp.x = dx / fabs(dx);
-        dp.y = dy / fabs(dx);
-        nvDebugCheck(fabs(dp.y) <= 1.0f);
+    if (fabsf(dx) >= fabsf(dy)) {
+        n = iround(fabsf(dx));
+        dp.x = dx / fabsf(dx);
+        dp.y = dy / fabsf(dx);
+        nvDebugCheck(fabsf(dp.y) <= 1.0f);
         dpdy.x = 0;
         dpdy.y = 1;
     }
     else {
         n = iround(fabs(dy));
-        dp.x = dx / fabs(dy);
-        dp.y = dy / fabs(dy);
-        nvDebugCheck(fabs(dp.x) <= 1.0f);
+        dp.x = dx / fabsf(dy);
+        dp.y = dy / fabsf(dy);
+        nvDebugCheck(fabsf(dp.x) <= 1.0f);
         dpdy.x = 1;
         dpdy.y = 0;
     }
@@ -594,7 +598,29 @@ bool nv::Raster::drawLine(bool antialias, Vector2::Arg extents, bool enableSciss
         drawPoint(p - dpdy, v, cb, param);
         p += dp;
     }
-
-    return true;
 }
 
+
+// Draw vertical or horizontal segments. For degenerate triangles.
+/*bool nv::Raster::drawSegment(Vector2::Arg extents, bool enableScissors, const Vector2 v[2], LineSamplingCallback cb, void * param)
+{
+    nvCheck(enableScissors == false);
+
+    
+    if (v[0].x == v[1].x) {         // Vertical segment.
+        
+    }
+    else if (v[0].y == v[1].y) {    // Horizontal segment.
+        int y = ftoi_round(v[0].y);
+        int x0 = ftoi_floor(v[0].x);
+        int x1 = ftoi_floor(v[0].x);
+
+        for (int x = x0; x <= x1; x++) {
+
+            cb(param, x, y, t, 
+        }
+    }
+
+    return false; // Not a valid segment.
+}
+*/

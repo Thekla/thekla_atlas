@@ -8,6 +8,12 @@
 
 #include <stdarg.h> // va_list
 
+#if NV_OS_IOS //ACS: maybe we want this for OSX too?
+#   ifdef __APPLE__
+#       include <TargetConditionals.h>
+#       include <signal.h>
+#   endif
+#endif
 
 // Make sure we are using our assert.
 #undef assert
@@ -32,23 +38,50 @@
 #else // NV_NO_ASSERT
 
 #   if NV_CC_MSVC
-// @@ Does this work in msvc-6 and earlier?
+        // @@ Does this work in msvc-6 and earlier?
 #       define nvDebugBreak()       __debugbreak()
 //#       define nvDebugBreak()        __asm { int 3 }
+#   elif NV_OS_ORBIS
+#       define nvDebugBreak()       __debugbreak()
+#   elif NV_OS_IOS && TARGET_OS_IPHONE
+#       define nvDebugBreak()       raise(SIGINT)
+#   elif NV_CC_CLANG
+#       define nvDebugBreak()       __builtin_debugtrap()
+#   elif NV_CC_GNUC
+//#       define nvDebugBreak()       __builtin_debugtrap()     // Does GCC have debugtrap?
+#       define nvDebugBreak()		__builtin_trap()
+/*
 #   elif NV_CC_GNUC && NV_CPU_PPC && NV_OS_DARWIN
 // @@ Use __builtin_trap() on GCC
-#       define nvDebugBreak()       __asm__ volatile ("trap");
+#       define nvDebugBreak()       __asm__ volatile ("trap")
 #   elif NV_CC_GNUC && NV_CPU_X86 && NV_OS_DARWIN
-#       define nvDebugBreak()       __asm__ volatile ("int3");
+#       define nvDebugBreak()       __asm__ volatile ("int3")
 #   elif NV_CC_GNUC && NV_CPU_X86 
 #       define nvDebugBreak()       __asm__ ( "int %0" : :"I"(3) )
 #   elif NV_OS_ORBIS
-#       define nvDebugBreak()       __asm volatile ("int $0x41");
+#       define nvDebugBreak()       __asm volatile ("int $0x41")
 #   else
 #       include <signal.h>
 #       define nvDebugBreak()       raise(SIGTRAP); 
 // define nvDebugBreak()        *((int *)(0)) = 0
+*/
 #   endif
+
+#  if NV_CC_MSVC
+#   define nvExpect(expr) (expr)
+#else
+#   define nvExpect(expr) __builtin_expect((expr) != 0, true)
+#endif
+
+#if NV_CC_CLANG 
+#   if __has_feature(attribute_analyzer_noreturn)
+#       define NV_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
+#   else
+#       define NV_ANALYZER_NORETURN
+#   endif
+#else
+#   define NV_ANALYZER_NORETURN
+#endif
 
 #define nvDebugBreakOnce() \
     NV_MULTI_LINE_MACRO_BEGIN \
@@ -58,7 +91,7 @@
 
 #define nvAssertMacro(exp) \
     NV_MULTI_LINE_MACRO_BEGIN \
-    if (!(exp)) { \
+    if (!nvExpect(exp)) { \
         if (nvAbort(#exp, __FILE__, __LINE__, __FUNC__) == NV_ABORT_DEBUG) { \
             nvDebugBreak(); \
         } \
@@ -69,11 +102,11 @@
 #define nvAssertMacroWithIgnoreAll(exp,...) \
     NV_MULTI_LINE_MACRO_BEGIN \
         static bool ignoreAll = false; \
-        if (!ignoreAll && !(exp)) { \
-            int result = nvAbort(#exp, __FILE__, __LINE__, __FUNC__, ##__VA_ARGS__); \
-            if (result == NV_ABORT_DEBUG) { \
+        if (!ignoreAll && !nvExpect(exp)) { \
+            int _result = nvAbort(#exp, __FILE__, __LINE__, __FUNC__, ##__VA_ARGS__); \
+            if (_result == NV_ABORT_DEBUG) { \
                 nvDebugBreak(); \
-            } else if (result == NV_ABORT_IGNORE) { \
+            } else if (_result == NV_ABORT_IGNORE) { \
                 ignoreAll = true; \
             } \
         } \
@@ -134,7 +167,6 @@
 #  endif
 #endif
 
-
 #define nvError(x)      nvAbort(x, __FILE__, __LINE__, __FUNC__)
 #define nvWarning(x)    nvDebugPrint("*** Warning %s/%d: %s\n", __FILE__, __LINE__, (x))
 
@@ -153,12 +185,26 @@
 #endif
 
 
-NVCORE_API int nvAbort(const char *exp, const char *file, int line, const char * func = NULL, const char * msg = NULL, ...) __attribute__((format (printf, 5, 6)));
+NVCORE_API int nvAbort(const char *exp, const char *file, int line, const char * func = NULL, const char * msg = NULL, ...) __attribute__((format (printf, 5, 6))) NV_ANALYZER_NORETURN;
 NVCORE_API void NV_CDECL nvDebugPrint( const char *msg, ... ) __attribute__((format (printf, 1, 2)));
 
 namespace nv
 {
     inline bool isValidPtr(const void * ptr) {
+    #if NV_OS_DARWIN
+        return true;    // IC: Not sure what ranges are OK on OSX.
+    #endif
+        
+    #if NV_CPU_X86_64
+        if (ptr == NULL) return true;
+        if (reinterpret_cast<uint64>(ptr) < 0x10000ULL) return false;
+        if (reinterpret_cast<uint64>(ptr) >= 0x000007FFFFFEFFFFULL) return false;
+    #else
+	    if (reinterpret_cast<uint32>(ptr) == 0xcccccccc) return false;
+	    if (reinterpret_cast<uint32>(ptr) == 0xcdcdcdcd) return false;
+	    if (reinterpret_cast<uint32>(ptr) == 0xdddddddd) return false;
+	    if (reinterpret_cast<uint32>(ptr) == 0xffffffff) return false;
+    #endif
         return true;
     }
 

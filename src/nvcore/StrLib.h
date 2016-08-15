@@ -35,11 +35,11 @@ namespace nv
         uint operator()(const char * str) const { return strHash(str); }
     };
 
-    NVCORE_API uint strLen(const char * str) NV_PURE;
+    NVCORE_API uint strLen(const char * str) NV_PURE;                       // Asserts on NULL strings.
 
-    NVCORE_API int strCmp(const char * s1, const char * s2) NV_PURE;
-    NVCORE_API int strCaseCmp(const char * s1, const char * s2) NV_PURE;
-    NVCORE_API bool strEqual(const char * s1, const char * s2) NV_PURE; // Accepts NULL strings.
+    NVCORE_API int strDiff(const char * s1, const char * s2) NV_PURE;       // Asserts on NULL strings.
+    NVCORE_API int strCaseDiff(const char * s1, const char * s2) NV_PURE;   // Asserts on NULL strings.
+    NVCORE_API bool strEqual(const char * s1, const char * s2) NV_PURE;     // Accepts NULL strings.
     NVCORE_API bool strCaseEqual(const char * s1, const char * s2) NV_PURE; // Accepts NULL strings.
 
     template <> struct Equal<const char *> {
@@ -54,7 +54,39 @@ namespace nv
     NVCORE_API void strCpy(char * dst, uint size, const char * src, uint len);
     NVCORE_API void strCat(char * dst, uint size, const char * src);
 
+    NVCORE_API const char * strSkipWhiteSpace(const char * str);
+    NVCORE_API char * strSkipWhiteSpace(char * str);
+
     NVCORE_API bool strMatch(const char * str, const char * pat) NV_PURE;
+
+    NVCORE_API bool isNumber(const char * str) NV_PURE;
+
+    /* @@ Implement these two functions and modify StringBuilder to use them?
+    NVCORE_API void strFormat(const char * dst, const char * fmt, ...);
+    NVCORE_API void strFormatList(const char * dst, const char * fmt, va_list arg);
+
+    template <size_t count> void strFormatSafe(char (&buffer)[count], const char *fmt, ...) __attribute__((format (printf, 2, 3)));
+    template <size_t count> void strFormatSafe(char (&buffer)[count], const char *fmt, ...) {
+        va_list args;
+        va_start(args, fmt);
+        strFormatList(buffer, count, fmt, args);
+        va_end(args);
+    }
+    template <size_t count> void strFormatListSafe(char (&buffer)[count], const char *fmt, va_list arg) {
+        va_list tmp;
+        va_copy(tmp, args);
+        strFormatList(buffer, count, fmt, tmp);
+        va_end(tmp);
+    }*/
+
+    template <int count> void strCpySafe(char (&buffer)[count], const char *src) {
+        strCpy(buffer, count, src);
+    }
+
+    template <int count> void strCatSafe(char (&buffer)[count], const char * src) {
+        strCat(buffer, count, src);
+    }
+
 
 
     /// String builder.
@@ -73,9 +105,12 @@ namespace nv
         StringBuilder & format( const char * format, ... ) __attribute__((format (printf, 2, 3)));
         StringBuilder & formatList( const char * format, va_list arg );
 
-        StringBuilder & append( const char * str );
-        StringBuilder & appendFormat( const char * format, ... ) __attribute__((format (printf, 2, 3)));
-        StringBuilder & appendFormatList( const char * format, va_list arg );
+        StringBuilder & append(char c);
+        StringBuilder & append(const char * str);
+        StringBuilder & append(const char * str, uint len);
+        StringBuilder & append(const StringBuilder & str);
+        StringBuilder & appendFormat(const char * format, ...) __attribute__((format (printf, 2, 3)));
+        StringBuilder & appendFormatList(const char * format, va_list arg);
 
         StringBuilder & appendSpace(uint n);
 
@@ -93,6 +128,8 @@ namespace nv
         bool endsWith(const char * str) const;
         bool beginsWith(const char * str) const;
 
+        char * reverseFind(char c);
+
         void reset();
         bool isNull() const { return m_size == 0; }
 
@@ -102,7 +139,8 @@ namespace nv
         const char * str() const { return m_str; }
         char * str() { return m_str; }
 
-        char * release();
+        char * release();       // Release ownership of string.
+        void acquire(char *);   // Take ownership of string.
 
         /// Implement value semantics.
         StringBuilder & operator=( const StringBuilder & s ) {
@@ -165,6 +203,8 @@ namespace nv
         NVCORE_API static char separator();
         NVCORE_API static const char * fileName(const char *);
         NVCORE_API static const char * extension(const char *);
+
+        NVCORE_API static void translatePath(char * path, char pathSeparator = NV_PATH_SEPARATOR);
     };
 
 
@@ -326,6 +366,66 @@ namespace nv
 
     template <> struct Hash<String> {
         uint operator()(const String & str) const { return str.hash(); }
+    };
+
+
+    // Like AutoPtr, but for const char strings.
+    class AutoString
+    {
+        NV_FORBID_COPY(AutoString);
+        NV_FORBID_HEAPALLOC();
+    public:
+
+        // Ctor.
+        AutoString(const char * p = NULL) : m_ptr(p) { }
+
+#if NV_CC_CPP11
+        // Move ctor.
+        AutoString(AutoString && ap) : m_ptr(ap.m_ptr) { ap.m_ptr = NULL; }
+#endif
+        
+        // Dtor. Deletes owned pointer.
+        ~AutoString() {
+            delete [] m_ptr;
+            m_ptr = NULL;
+        }
+
+        // Delete owned pointer and assign new one.
+        void operator=(const char * p) {
+            if (p != m_ptr) 
+            {
+                delete [] m_ptr;
+                m_ptr = p;
+            }
+        }
+
+        // Get pointer.
+        const char * ptr() const { return m_ptr; }
+        operator const char *() const { return m_ptr; }
+
+        // Relinquish ownership of the underlying pointer and returns that pointer.
+        const char * release() {
+            const char * tmp = m_ptr;
+            m_ptr = NULL;
+            return tmp;
+        }
+
+        // comparison operators.
+        friend bool operator == (const AutoString & ap, const char * const p) {
+            return (ap.ptr() == p);
+        }
+        friend bool operator != (const AutoString & ap, const char * const p) {
+            return (ap.ptr() != p);
+        }
+        friend bool operator == (const char * const p, const AutoString & ap) {
+            return (ap.ptr() == p);
+        }
+        friend bool operator != (const char * const p, const AutoString & ap) {
+            return (ap.ptr() != p);
+        }
+
+    private:
+        const char * m_ptr;
     };
 
 } // nv namespace

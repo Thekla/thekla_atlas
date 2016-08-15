@@ -101,7 +101,7 @@ namespace
 
 struct nv::ChartBuildData
 {
-    ChartBuildData(uint id) : id(id) {
+    ChartBuildData(int id) : id(id) {
         planeNormal = Vector3(0);
         centroid = Vector3(0);
         coneAxis = Vector3(0);
@@ -112,7 +112,7 @@ struct nv::ChartBuildData
         centroidSum = Vector3(0);
     }
 
-    uint id;
+    int id;
 
     // Proxy info:
     Vector3 planeNormal;
@@ -135,8 +135,8 @@ struct nv::ChartBuildData
 AtlasBuilder::AtlasBuilder(const HalfEdge::Mesh * m) : mesh(m), facesLeft(m->faceCount())
 {
     const uint faceCount = m->faceCount();
-    faceChartArray.resize(faceCount, ~0);
-    faceCandidateArray.resize(faceCount, ~0);
+    faceChartArray.resize(faceCount, -1);
+    faceCandidateArray.resize(faceCount, -1);
 
     // @@ Floyd for the whole mesh is too slow. We could compute floyd progressively per patch as the patch grows. We need a better solution to compute most central faces.
     //computeShortestPaths();
@@ -165,6 +165,22 @@ AtlasBuilder::~AtlasBuilder()
     {
         delete chartArray[i];
     }
+}
+
+
+void AtlasBuilder::markUnchartedFaces(const Array<uint> & unchartedFaces)
+{
+    const uint unchartedFaceCount = unchartedFaces.count();
+    for (uint i = 0; i < unchartedFaceCount; i++){ 
+        uint f = unchartedFaces[i];
+        faceChartArray[f] = -2;
+        //faceCandidateArray[f] = -2; // @@ ?
+
+        removeCandidate(f);
+    }
+
+    nvDebugCheck(facesLeft >= unchartedFaceCount);
+    facesLeft -= unchartedFaceCount;
 }
 
 
@@ -223,12 +239,12 @@ void AtlasBuilder::placeSeeds(float threshold, uint maxSeedCount)
 
     for (uint i = 0; i < maxSeedCount; i++)
     {
-        createRandomChart(threshold);
-
         if (facesLeft == 0) {
             // No faces left, stop creating seeds.
             break;
         }
+
+        createRandomChart(threshold);
     }
 }
 
@@ -243,9 +259,9 @@ void AtlasBuilder::createRandomChart(float threshold)
     uint i = 0;
     for (uint f = 0; f != randomFaceIdx; f++, i++)
     {
-        while (faceChartArray[i] != ~0) i++;
+        while (faceChartArray[i] != -1) i++;
     }
-    while (faceChartArray[i] != ~0) i++;
+    while (faceChartArray[i] != -1) i++;
 
     chart->seeds.append(i);
 
@@ -260,7 +276,10 @@ void AtlasBuilder::addFaceToChart(ChartBuildData * chart, uint f, bool recompute
 {
     // Add face to chart.
     chart->faces.append(f);
+
+    nvDebugCheck(faceChartArray[f] == -1);
     faceChartArray[f] = chart->id;
+
     facesLeft--;
 
     // Update area and boundary length.
@@ -283,10 +302,12 @@ void AtlasBuilder::addFaceToChart(ChartBuildData * chart, uint f, bool recompute
 // @@ Get N best candidates in one pass.
 const AtlasBuilder::Candidate & AtlasBuilder::getBestCandidate() const
 {
-    uint best = -1;
+    uint best = 0;
     float bestCandidateMetric = FLT_MAX;
 
     const uint candidateCount = candidateArray.count();
+    nvCheck(candidateCount > 0);
+
     for (uint i = 0; i < candidateCount; i++)
     {
         const Candidate & candidate = candidateArray[i];
@@ -296,7 +317,6 @@ const AtlasBuilder::Candidate & AtlasBuilder::getBestCandidate() const
             best = i;
         }
     }
-    nvCheck(best != -1);
 
     return candidateArray[best];
 }
@@ -349,7 +369,7 @@ bool AtlasBuilder::growChart(ChartBuildData * chart, float threshold, uint faceC
         }
 
         uint f = chart->candidates.pop();
-        if (faceChartArray[f] == ~0)
+        if (faceChartArray[f] == -1)
         {
             addFaceToChart(chart, f);
             i++;
@@ -370,8 +390,8 @@ void AtlasBuilder::resetCharts()
     const uint faceCount = mesh->faceCount();
     for (uint i = 0; i < faceCount; i++)
     {
-        faceChartArray[i] = ~0;
-        faceCandidateArray[i] = ~0;
+        faceChartArray[i] = -1;
+        faceCandidateArray[i] = -1;
     }
 
     facesLeft = faceCount;
@@ -411,7 +431,7 @@ void AtlasBuilder::updateCandidates(ChartBuildData * chart, uint f)
         {
             uint f = edge->face->id;
 
-            if (faceChartArray[f] == ~0)
+            if (faceChartArray[f] == -1)
             {
                 chart->candidates.push(f);
             }
@@ -696,8 +716,8 @@ bool AtlasBuilder::relocateSeed(ChartBuildData * chart)
 void AtlasBuilder::removeCandidate(uint f)
 {
     int c = faceCandidateArray[f];
-    if (c != ~0) {
-        faceCandidateArray[f] = ~0;
+    if (c != -1) {
+        faceCandidateArray[f] = -1;
 
         if (c == candidateArray.count() - 1) {
             candidateArray.popBack();
@@ -711,7 +731,7 @@ void AtlasBuilder::removeCandidate(uint f)
 
 void AtlasBuilder::updateCandidate(ChartBuildData * chart, uint f, float metric)
 {
-    if (faceCandidateArray[f] == ~0) {
+    if (faceCandidateArray[f] == -1) {
         const uint index = candidateArray.count();
         faceCandidateArray[f] = index;
         candidateArray.resize(index + 1);
@@ -721,7 +741,7 @@ void AtlasBuilder::updateCandidate(ChartBuildData * chart, uint f, float metric)
     }
     else {
         int c = faceCandidateArray[f];
-        nvDebugCheck(c != ~0);
+        nvDebugCheck(c != -1);
 
         Candidate & candidate = candidateArray[c];
         nvDebugCheck(candidate.face == f);
@@ -743,7 +763,7 @@ void AtlasBuilder::updatePriorities(ChartBuildData * chart)
     {
         chart->candidates.pairs[i].priority = evaluatePriority(chart, chart->candidates.pairs[i].face);
 
-        if (faceChartArray[chart->candidates.pairs[i].face] == ~0)
+        if (faceChartArray[chart->candidates.pairs[i].face] == -1)
         {
             updateCandidate(chart, chart->candidates.pairs[i].face, chart->candidates.pairs[i].priority);
         }
@@ -873,11 +893,11 @@ float AtlasBuilder::evaluateRoundnessMetric(ChartBuildData * chart, uint face, f
     // Garland's Hierarchical Face Clustering paper uses ratio between boundary and area, which is easier to compute and might work as well:
     // roundness = D^2/4*pi*A -> circle = 1, non circle greater than 1
 
-    //return square(newBoundaryLength) / newChartArea - 4 * PI;
+    //return square(newBoundaryLength) / (newChartArea * 4 * PI);
     float roundness = square(chart->boundaryLength) / chart->area;
     float newRoundness = square(newBoundaryLength) / newChartArea;
     if (newRoundness > roundness) {
-        return square(newBoundaryLength) / newChartArea - 4 * PI;
+        return square(newBoundaryLength) / (newChartArea * 4 * PI);
     }
     else {
         // Offer no impedance to faces that improve roundness.
@@ -1096,7 +1116,7 @@ float AtlasBuilder::evaluateBoundaryLength(ChartBuildData * chart, uint f)
 {
     float boundaryLength = chart->boundaryLength;
 
-    // Add new edges, substract edges shared with the chart.
+    // Add new edges, subtract edges shared with the chart.
     const HalfEdge::Face * face = mesh->faceAt(f);
     for (HalfEdge::Face::ConstEdgeIterator it(face->edges()); !it.isDone(); it.advance())
     {
@@ -1220,7 +1240,7 @@ void AtlasBuilder::mergeCharts()
                     uint neighborChart = faceChartArray[neighborFace];
 
                     if (neighborChart != c) {
-                        if (edge->isSeam() && (isNormalSeam(edge) || isTextureSeam(edge))) {
+                        if ((edge->isSeam() && (isNormalSeam(edge) || isTextureSeam(edge))) || neighborChart == -2) {
                             externalBoundary += l;
                         }
                         else {
@@ -1268,7 +1288,7 @@ void AtlasBuilder::mergeCharts()
     }
 
     // Remove deleted charts.
-    for (uint c = 0; c < chartArray.count();)
+    for (int c = 0; c < I32(chartArray.count()); /*do not increment if removed*/)
     {
         if (chartArray[c] == NULL) {
             chartArray.removeAt(c);
@@ -1276,9 +1296,9 @@ void AtlasBuilder::mergeCharts()
             // Update faceChartArray.
             const uint faceCount = faceChartArray.count();
             for (uint i = 0; i < faceCount; i++) {
-                nvDebugCheck (faceChartArray[i] != ~0);
+                nvDebugCheck (faceChartArray[i] != -1);
                 nvDebugCheck (faceChartArray[i] != c);
-                nvDebugCheck (faceChartArray[i] <= chartArray.count());
+                nvDebugCheck (faceChartArray[i] <= I32(chartArray.count()));
 
                 if (faceChartArray[i] > c) {
                     faceChartArray[i]--;
