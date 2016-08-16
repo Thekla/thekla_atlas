@@ -85,7 +85,7 @@ namespace nv
 
         HalfEdge::Mesh * buildHalfEdgeMesh(bool weldPositions, Error * error = NULL, Array<uint> * badFaces = NULL) const;
 
-        //Reducer::Mesh * buildReducerMesh(bool weldPositions, Error * error = NULL, Array<uint> * badFaces = NULL) const;
+        Reducer::Mesh * buildReducerMesh(bool weldPositions, Error * error = NULL, Array<uint> * badFaces = NULL) const;
 
         bool buildPositions(Array<Vector3> & positionArray);
         bool buildNormals(Array<Vector3> & normalArray);

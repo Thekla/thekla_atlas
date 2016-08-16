@@ -36,7 +36,7 @@
 #    endif //_DEBUG
 #endif //NV_OS_XBOX
 
-#if !NV_OS_WIN32 && defined(HAVE_SIGNAL_H)
+#if !NV_OS_WIN32 && defined(NV_HAVE_SIGNAL_H)
 #   include <signal.h>
 #endif
 
@@ -44,9 +44,9 @@
 #   include <unistd.h> // getpid
 #endif
 
-#if NV_OS_LINUX && defined(HAVE_EXECINFO_H)
+#if NV_OS_LINUX && defined(NV_HAVE_EXECINFO_H)
 #   include <execinfo.h> // backtrace
-#   if NV_CC_GNUC // defined(HAVE_CXXABI_H)
+#   if NV_CC_GNUC // defined(NV_HAVE_CXXABI_H)
 #       include <cxxabi.h>
 #   endif
 #endif
@@ -56,22 +56,31 @@
 #   include <sys/param.h>
 #   include <sys/sysctl.h> // sysctl
 #   if !defined(NV_OS_OPENBSD)
-#   include <sys/ucontext.h>
+#       include <sys/ucontext.h>
 #   endif
-#   if defined(HAVE_EXECINFO_H) // only after OSX 10.5
+#   if defined(NV_HAVE_EXECINFO_H) // only after OSX 10.5
 #       include <execinfo.h> // backtrace
-#       if NV_CC_GNUC // defined(HAVE_CXXABI_H)
+#       if NV_CC_GNUC // defined(NV_HAVE_CXXABI_H)
 #           include <cxxabi.h>
 #       endif
 #   endif
-#   define NV_USE_SEPARATE_THREAD 0
-#else
-#   define NV_USE_SEPARATE_THREAD 1
 #endif
 
 #if NV_OS_ORBIS
 #include <libdbg.h>
 #endif
+
+#if NV_OS_DURANGO
+#include "Windows.h"
+#include <winnt.h>
+#include <crtdbg.h>
+#include <dbghelp.h>
+#include <errhandlingapi.h>
+#define NV_USE_SEPARATE_THREAD 0
+#else
+#define NV_USE_SEPARATE_THREAD 1
+#endif
+
 
 
 using namespace nv;
@@ -85,12 +94,12 @@ namespace
     static bool s_sig_handler_enabled = false;
     static bool s_interactive = true;
 
-#if NV_OS_WIN32 && NV_CC_MSVC
+#if (NV_OS_WIN32 && NV_CC_MSVC) || NV_OS_DURANGO
 
     // Old exception filter.
     static LPTOP_LEVEL_EXCEPTION_FILTER s_old_exception_filter = NULL;
 
-#elif !NV_OS_WIN32 && defined(HAVE_SIGNAL_H)
+#elif !NV_OS_WIN32 && defined(NV_HAVE_SIGNAL_H)
 
     // Old signal handlers.
     struct sigaction s_old_sigsegv;
@@ -101,17 +110,16 @@ namespace
 #endif
 
 
-#if NV_OS_WIN32 && NV_CC_MSVC
+#if (NV_OS_WIN32 && NV_CC_MSVC) || NV_OS_DURANGO
 
     // We should try to simplify the top level filter as much as possible.
     // http://www.nynaeve.net/?p=128
-
-#if NV_USE_SEPARATE_THREAD
 
     // The critical section enforcing the requirement that only one exception be
     // handled by a handler at a time.
     static CRITICAL_SECTION s_handler_critical_section;
 
+#if NV_USE_SEPARATE_THREAD
     // Semaphores used to move exception handling between the exception thread
     // and the handler thread.  handler_start_semaphore_ is signalled by the
     // exception thread to wake up the handler thread when an exception occurs.
@@ -135,6 +143,7 @@ namespace
         bool finished;
     };
 
+#if NV_OS_WIN32
     // static
     static BOOL CALLBACK miniDumpWriteDumpCallback(PVOID context, const PMINIDUMP_CALLBACK_INPUT callback_input, PMINIDUMP_CALLBACK_OUTPUT callback_output)
     {
@@ -172,26 +181,78 @@ namespace
         // Ignore other callback types.
         return FALSE;
     }
+#endif
 
     static bool writeMiniDump(EXCEPTION_POINTERS * pExceptionInfo)
     {
+#if NV_OS_DURANGO
+        // Get a handle to the minidump method.
+        typedef BOOL(WINAPI* MiniDumpWriteDumpPfn) (
+            _In_ HANDLE hProcess,
+            _In_ DWORD ProcessId,
+            _In_ HANDLE hFile,
+            _In_ MINIDUMP_TYPE DumpType,
+            _In_opt_ PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+            _In_opt_ PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+            _Reserved_ PVOID CallbackParam
+            );
+        MiniDumpWriteDumpPfn MiniDumpWriteDump = NULL;
+        HMODULE hToolHelpModule = ::LoadLibraryW(L"toolhelpx.dll");
+        if (hToolHelpModule != INVALID_HANDLE_VALUE) {
+            MiniDumpWriteDump = reinterpret_cast<MiniDumpWriteDumpPfn>(::GetProcAddress(hToolHelpModule, "MiniDumpWriteDump"));
+            if (!MiniDumpWriteDump) {
+                FreeLibrary(hToolHelpModule);
+                return false;
+            }
+        }
+        else
+            return false;
+
+        // Generate a decent filename.
+        nv::Path application_path(256);
+        HINSTANCE hinstance = GetModuleHandle(NULL);
+        GetModuleFileName(hinstance, application_path.str(), 256);
+        application_path.stripExtension();
+        const char * application_name = application_path.fileName();
+
+        SYSTEMTIME local_time;
+        GetLocalTime(&local_time);
+
+        char dump_filename[MAX_PATH] = {};
+        sprintf_s(dump_filename, "d:\\%s-%04d%02d%02d-%02d%02d%02d.dmp",
+            application_name,
+            local_time.wYear, local_time.wMonth, local_time.wDay,
+            local_time.wHour, local_time.wMinute, local_time.wSecond );
+#else
+        const char* dump_filename = "crash.dmp";
+#endif
+
         // create the file
-        HANDLE hFile = CreateFileA("crash.dmp", GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE hFile = CreateFileA(dump_filename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         if (hFile == INVALID_HANDLE_VALUE) {
             //nvDebug("*** Failed to create dump file.\n");
+#if NV_OS_DURANGO
+            FreeLibrary(hToolHelpModule);
+#endif
             return false;
         }
 
         MINIDUMP_EXCEPTION_INFORMATION * pExInfo = NULL;
+#if NV_OS_WIN32
         MINIDUMP_CALLBACK_INFORMATION * pCallback = NULL;
+#else
+        void * pCallback = NULL;
+#endif
 
+        MINIDUMP_EXCEPTION_INFORMATION ExInfo;
         if (pExceptionInfo != NULL) {
-            MINIDUMP_EXCEPTION_INFORMATION ExInfo;
             ExInfo.ThreadId = ::GetCurrentThreadId();
             ExInfo.ExceptionPointers = pExceptionInfo;
             ExInfo.ClientPointers = NULL;
             pExInfo = &ExInfo;
 
+#if NV_OS_WIN32
             MINIDUMP_CALLBACK_INFORMATION callback;
             MinidumpCallbackContext context;
 
@@ -223,6 +284,7 @@ namespace
                 callback.CallbackParam = reinterpret_cast<void*>(&context);
                 pCallback = &callback;
             }
+#endif
         }
 
         MINIDUMP_TYPE miniDumpType = (MINIDUMP_TYPE)(MiniDumpNormal|MiniDumpWithHandleData|MiniDumpWithThreadInfo);
@@ -230,6 +292,9 @@ namespace
         // write the dump
         BOOL ok = MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, miniDumpType, pExInfo, NULL, pCallback) != 0;
         CloseHandle(hFile);
+#if NV_OS_DURANGO
+        FreeLibrary(hToolHelpModule);
+#endif
 
         if (ok == FALSE) {
             //nvDebug("*** Failed to save dump file.\n");
@@ -268,7 +333,7 @@ namespace
     }
 
     /*static NV_NOINLINE int backtrace(void * trace[], int maxcount) {
-    
+
         // In Windows XP and Windows Server 2003, the sum of the FramesToSkip and FramesToCapture parameters must be less than 63.
         int xp_maxcount = min(63-1, maxcount);
 
@@ -278,6 +343,7 @@ namespace
         return count;
     }*/
 
+#if NV_OS_WIN32
     static NV_NOINLINE int backtraceWithSymbols(CONTEXT * ctx, void * trace[], int maxcount, int skip = 0) {
         
         // Init the stack frame for this function
@@ -393,8 +459,8 @@ namespace
                 if (!SymGetLineFromAddr64(hProcess, ip, &dwDisplacement, &theLine))
                 {
                     // Do not print unknown symbols anymore.
-                    break;
-                    //builder.format("unknown(%08X) : %s\n", (uint32)ip, pFunc);
+                    //break;
+                    builder.format("unknown(%08X) : %s\n", (uint32)ip, pFunc);
                 }
                 else
                 {
@@ -418,7 +484,7 @@ namespace
             }
         }
     }
-
+#endif
 
     // Write mini dump and print stack trace.
     static LONG WINAPI handleException(EXCEPTION_POINTERS * pExceptionInfo)
@@ -452,6 +518,7 @@ namespace
             return EXCEPTION_CONTINUE_EXECUTION;
         }
 
+#if NV_OS_WIN32
         // If that fails, then try to pretty print a stack trace and terminate.
         void * trace[64];
         
@@ -472,6 +539,7 @@ namespace
 
             fclose(fp);
         }
+#endif
 
         // This should terminate the process and set the error exit code.
         TerminateProcess(GetCurrentProcess(), EXIT_FAILURE + 2);
@@ -484,52 +552,43 @@ namespace
         TerminateProcess(GetCurrentProcess(), EXIT_FAILURE + 8);
     }
 
-    static void handleInvalidParameter(const wchar_t * expresion, const wchar_t * function, const wchar_t * file, unsigned int line, uintptr_t reserved) {
+    static void handleInvalidParameter(const wchar_t * wexpresion, const wchar_t * wfunction, const wchar_t * wfile, unsigned int line, uintptr_t reserved) {
 
         size_t convertedCharCount = 0;
-        StringBuilder tmp;
-
-        if (expresion != NULL) {
-            uint size = toU32(wcslen(expresion) + 1);
-            tmp.reserve(size);
-            wcstombs_s(&convertedCharCount, tmp.str(), size, expresion, _TRUNCATE);
-
-            nvDebug("*** Invalid parameter: %s\n", tmp.str());
-
-            if (file != NULL) {
-                size = toU32(wcslen(file) + 1);
-                tmp.reserve(size);
-                wcstombs_s(&convertedCharCount, tmp.str(), size, file, _TRUNCATE);
-
-                nvDebug("    On file: %s\n", tmp.str());
-
-                if (function != NULL) {
-                    size = toU32(wcslen(function) + 1);
-                    tmp.reserve(size);
-                    wcstombs_s(&convertedCharCount, tmp.str(), size, function, _TRUNCATE);
-
-                    nvDebug("    On function: %s\n", tmp.str());
-                }
-
-                nvDebug("    On line: %u\n", line);
-            }
+        
+        StringBuilder expresion;
+        if (wexpresion != NULL) {
+            uint size = U32(wcslen(wexpresion) + 1);
+            expresion.reserve(size);
+            wcstombs_s(&convertedCharCount, expresion.str(), size, wexpresion, _TRUNCATE);
         }
 
-        nvDebugBreak();
-        TerminateProcess(GetCurrentProcess(), EXIT_FAILURE + 8);
+        StringBuilder file;
+        if (wfile != NULL) {
+            uint size = U32(wcslen(wfile) + 1);
+            file.reserve(size);
+            wcstombs_s(&convertedCharCount, file.str(), size, wfile, _TRUNCATE);
+        }
+
+        StringBuilder function;
+        if (wfunction != NULL) {
+            uint size = U32(wcslen(wfunction) + 1);
+            function.reserve(size);
+            wcstombs_s(&convertedCharCount, function.str(), size, wfunction, _TRUNCATE);
+        }
+        
+        int result = nvAbort(expresion.str(), file.str(), line, function.str());
+        if (result == NV_ABORT_DEBUG) {
+            nvDebugBreak();
+        } 
     }
 
+#elif !NV_OS_WIN32 && defined(NV_HAVE_SIGNAL_H) // NV_OS_LINUX || NV_OS_DARWIN
 
-#elif !NV_OS_WIN32 && defined(HAVE_SIGNAL_H) // NV_OS_LINUX || NV_OS_DARWIN
-
-#if defined(HAVE_EXECINFO_H)
+#if defined(NV_HAVE_EXECINFO_H)
 
     static bool hasStackTrace() {
-#if NV_OS_DARWIN
-        return backtrace != NULL;
-#else
         return true;
-#endif
     }
 
 
@@ -538,7 +597,10 @@ namespace
         char ** string_array = backtrace_symbols(trace, size);
 
         for(int i = start; i < size-1; i++ ) {
-#       if NV_CC_GNUC // defined(HAVE_CXXABI_H)
+            // IC: Just in case.
+            if (string_array[i] == NULL || string_array[i][0] == '\0') break;
+
+#       if NV_CC_GNUC // defined(NV_HAVE_CXXABI_H)
             // @@ Write a better parser for the possible formats.
             char * begin = strchr(string_array[i], '(');
             char * end = strrchr(string_array[i], '+');
@@ -592,14 +654,14 @@ namespace
         writeStackTrace(trace, size, 1, lines);
 
         for (uint i = 0; i < lines.count(); i++) {
-            nvDebug(lines[i]);
+            nvDebug("%s", lines[i]);
             delete lines[i];
         }
 
         nvDebug("\n");
     }
 
-#endif // defined(HAVE_EXECINFO_H)
+#endif // defined(NV_HAVE_EXECINFO_H)
 
     static void * callerAddress(void * secret)
     {
@@ -708,7 +770,7 @@ namespace
             nvDebug("Got signal %d\n", sig);
         }
 
-#if defined(HAVE_EXECINFO_H)
+#if defined(NV_HAVE_EXECINFO_H)
         if (hasStackTrace()) // in case of weak linking
         {
             void * trace[64];
@@ -721,12 +783,12 @@ namespace
 
             printStackTrace(trace, size, 1);
         }
-#endif // defined(HAVE_EXECINFO_H)
+#endif // defined(NV_HAVE_EXECINFO_H)
 
         exit(0);
     }
 
-#endif // defined(HAVE_SIGNAL_H)
+#endif // defined(NV_HAVE_SIGNAL_H)
 
 
 
@@ -775,7 +837,7 @@ namespace
 
             if (s_interactive) {
                 flushMessageQueue();
-                int action = MessageBoxA(NULL, error_string.str(), "Assertion failed", MB_ABORTRETRYIGNORE|MB_ICONERROR);
+                int action = MessageBoxA(NULL, error_string.str(), "Assertion failed", MB_ABORTRETRYIGNORE | MB_ICONERROR | MB_TOPMOST);
                 switch( action ) {
                 case IDRETRY:
                     ret = NV_ABORT_DEBUG;
@@ -833,10 +895,10 @@ namespace
             return ret;
         }
     };
-#elif NV_OS_ORBIS
+#elif NV_OS_ORBIS || NV_OS_DURANGO
 
-    /** Orbis assert handler. */
-    struct OrbisAssertHandler : public AssertHandler
+    /** Console assert handler. */
+    struct ConsoleAssertHandler : public AssertHandler
     {
         // Assert handler method.
         virtual int assertion(const char * exp, const char * file, int line, const char * func, const char * msg, va_list arg)
@@ -886,7 +948,7 @@ namespace
             }
 #endif
 
-#if defined(HAVE_EXECINFO_H)
+#if defined(NV_HAVE_EXECINFO_H)
             if (hasStackTrace())
             {
                 void * trace[64];
@@ -916,8 +978,8 @@ int nvAbort(const char * exp, const char * file, int line, const char * func/*=N
     static Win32AssertHandler s_default_assert_handler;
 #elif NV_OS_XBOX
     static Xbox360AssertHandler s_default_assert_handler;
-#elif NV_OS_ORBIS
-    static OrbisAssertHandler s_default_assert_handler;
+#elif NV_OS_ORBIS || NV_OS_DURANGO
+    static ConsoleAssertHandler s_default_assert_handler;
 #else
     static UnixAssertHandler s_default_assert_handler;
 #endif
@@ -936,19 +998,12 @@ int nvAbort(const char * exp, const char * file, int line, const char * func/*=N
 // Abnormal termination. Create mini dump and output call stack.
 void debug::terminate(int code)
 {
-#if NV_OS_IOS 
-    //ACStodoIOS
-#elif NV_OS_ORBIS
-    //SBtodoORBIS
-#elif NV_OS_LINUX
-    // TODO(casey): If anyone ever implements the iOS/Orbis
-    // versions, then we should probably implement a Linux one too :)
-#elif NV_OS_DARWIN
-#else
+#if NV_OS_WIN32 || NV_OS_DURANGO
     EnterCriticalSection(&s_handler_critical_section);
 
     writeMiniDump(NULL);
 
+#if NV_OS_WIN32
     const int max_stack_size = 64;
     void * trace[max_stack_size];
     int size = backtrace(trace, max_stack_size);
@@ -968,10 +1023,11 @@ void debug::terminate(int code)
 
         fclose(fp);
     }
+#endif
 
     LeaveCriticalSection(&s_handler_critical_section);
 #endif
-    
+
     exit(code);
 }
 
@@ -983,7 +1039,8 @@ void NV_CDECL nvDebugPrint(const char *msg, ...)
     va_start(arg,msg);
     if (s_message_handler != NULL) {
         s_message_handler->log( msg, arg );
-    } else {
+    }
+    else {
         vprintf(msg, arg);
     }
     va_end(arg);
@@ -993,7 +1050,7 @@ void NV_CDECL nvDebugPrint(const char *msg, ...)
 /// Dump debug info.
 void debug::dumpInfo()
 {
-#if (NV_OS_WIN32 && NV_CC_MSVC) || (defined(HAVE_SIGNAL_H) && defined(HAVE_EXECINFO_H))
+#if (NV_OS_WIN32 && NV_CC_MSVC) || (defined(NV_HAVE_SIGNAL_H) && defined(NV_HAVE_EXECINFO_H))
     if (hasStackTrace())
     {
         void * trace[64];
@@ -1015,7 +1072,7 @@ void debug::dumpInfo()
 /// Dump callstack using the specified handler.
 void debug::dumpCallstack(MessageHandler *messageHandler, int callstackLevelsToSkip /*= 0*/)
 {
-#if (NV_OS_WIN32 && NV_CC_MSVC) || (defined(HAVE_SIGNAL_H) && defined(HAVE_EXECINFO_H))
+#if (NV_OS_WIN32 && NV_CC_MSVC) || (defined(NV_HAVE_SIGNAL_H) && defined(NV_HAVE_EXECINFO_H))
     if (hasStackTrace())
     {
         void * trace[64];
@@ -1057,18 +1114,11 @@ void debug::resetAssertHandler()
     s_assert_handler = NULL;
 }
 
+#if NV_OS_WIN32 || NV_OS_DURANGO
 #if NV_USE_SEPARATE_THREAD
 
 static void initHandlerThread()
 {
-#if NV_OS_IOS
-    //ACStodoIOS
-#elif NV_OS_ORBIS
-    //SBtodoORBIS
-#elif NV_OS_LINUX
-    // TODO(casey): If anyone ever implements the iOS/Orbis
-    // versions, then we should probably implement a Linux one too :)
-#else
     static const int kExceptionHandlerThreadInitialStackSize = 64 * 1024;
 
     // Set synchronization primitives and the handler thread.  Each
@@ -1078,10 +1128,12 @@ static void initHandlerThread()
     // context outside of an exception.
     InitializeCriticalSection(&s_handler_critical_section);
     
-    s_handler_start_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+    s_handler_start_semaphore = CreateSemaphoreExW(NULL, 0, 1, NULL, 0,
+        SEMAPHORE_MODIFY_STATE | DELETE | SYNCHRONIZE);
     nvDebugCheck(s_handler_start_semaphore != NULL);
 
-    s_handler_finish_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+    s_handler_finish_semaphore = CreateSemaphoreExW(NULL, 0, 1, NULL, 0,
+        SEMAPHORE_MODIFY_STATE | DELETE | SYNCHRONIZE);
     nvDebugCheck(s_handler_finish_semaphore != NULL);
 
     // Don't attempt to create the thread if we could not create the semaphores.
@@ -1102,7 +1154,6 @@ static void initHandlerThread()
         minidump_write_dump_ = reinterpret_cast<MiniDumpWriteDump_type>(GetProcAddress(dbghelp_module_, "MiniDumpWriteDump"));
     }
     */
-#endif
 }
 
 static void shutHandlerThread() {
@@ -1110,20 +1161,24 @@ static void shutHandlerThread() {
 }
 
 #endif // NV_USE_SEPARATE_THREAD
+#endif // NV_OS_WIN32
 
 
 // Enable signal handler.
 void debug::enableSigHandler(bool interactive)
 {
-    nvCheck(s_sig_handler_enabled != true);
+    if (s_sig_handler_enabled) return;
+
     s_sig_handler_enabled = true;
     s_interactive = interactive;
 
-#if NV_OS_WIN32 && NV_CC_MSVC
+#if (NV_OS_WIN32 && NV_CC_MSVC) || NV_OS_DURANGO
     if (interactive) {
+#if NV_OS_WIN32
         // Do not display message boxes on error.
         // http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621(v=vs.85).aspx
         SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
+#endif
 
         // CRT reports errors to debug output only.
         // http://msdn.microsoft.com/en-us/library/1y71x448(v=vs.80).aspx
@@ -1135,6 +1190,8 @@ void debug::enableSigHandler(bool interactive)
 
 #if NV_USE_SEPARATE_THREAD
     initHandlerThread();
+#else
+    InitializeCriticalSection(&s_handler_critical_section);
 #endif
 
     s_old_exception_filter = ::SetUnhandledExceptionFilter( handleException );
@@ -1145,7 +1202,7 @@ void debug::enableSigHandler(bool interactive)
 
     _set_purecall_handler(handlePureVirtualCall);
 
-
+#if NV_OS_WIN32
     // SYMOPT_DEFERRED_LOADS make us not take a ton of time unless we actual log traces
     SymSetOptions(SYMOPT_DEFERRED_LOADS|SYMOPT_FAIL_CRITICAL_ERRORS|SYMOPT_LOAD_LINES|SYMOPT_UNDNAME);
 
@@ -1153,8 +1210,9 @@ void debug::enableSigHandler(bool interactive)
         DWORD error = GetLastError();
         nvDebug("SymInitialize returned error : %d\n", error);
     }
+#endif
 
-#elif !NV_OS_WIN32 && defined(HAVE_SIGNAL_H)
+#elif !NV_OS_WIN32 && defined(NV_HAVE_SIGNAL_H)
 
     // Install our signal handler
     struct sigaction sa;
@@ -1176,14 +1234,16 @@ void debug::disableSigHandler()
     nvCheck(s_sig_handler_enabled == true);
     s_sig_handler_enabled = false;
 
-#if NV_OS_WIN32 && NV_CC_MSVC
+#if (NV_OS_WIN32 && NV_CC_MSVC) || NV_OS_DURANGO
 
     ::SetUnhandledExceptionFilter( s_old_exception_filter );
     s_old_exception_filter = NULL;
 
+#if NV_OS_WIN32
     SymCleanup(GetCurrentProcess());
+#endif
 
-#elif !NV_OS_WIN32 && defined(HAVE_SIGNAL_H)
+#elif !NV_OS_WIN32 && defined(NV_HAVE_SIGNAL_H)
 
     sigaction(SIGSEGV, &s_old_sigsegv, NULL);
     sigaction(SIGTRAP, &s_old_sigtrap, NULL);
@@ -1212,7 +1272,17 @@ bool debug::isDebuggerPresent()
     return false;
 #endif
 #elif NV_OS_ORBIS
+  #if PS4_FINAL_REQUIREMENTS
+    return false; 
+  #else
     return sceDbgIsDebuggerAttached() == 1;
+  #endif
+#elif NV_OS_DURANGO
+  #if XB1_FINAL_REQUIREMENTS
+    return false;
+  #else
+    return IsDebuggerPresent() == TRUE;
+  #endif
 #elif NV_OS_DARWIN
     int mib[4];
     struct kinfo_proc info;

@@ -9,10 +9,10 @@
 #include "halfedge/Vertex.h"
 #include "halfedge/Face.h"
 
-//#include "reducer/ReducerBuilder.h"
-//#include "reducer/ReducerMesh.h"
-//#include "reducer/ReducerVertex.h"
-//#include "reducer/ReducerFace.h"
+#include "reducer/ReducerBuilder.h"
+#include "reducer/ReducerMesh.h"
+#include "reducer/ReducerVertex.h"
+#include "reducer/ReducerFace.h"
 
 #include "weld/Weld.h"
 
@@ -859,7 +859,6 @@ HalfEdge::Mesh * MeshBuilder::buildHalfEdgeMesh(bool weldPositions, Error * erro
     return mesh.release();
 }
 
-#if 0
 // Get half edge mesh.
 Reducer::Mesh * MeshBuilder::buildReducerMesh(bool weldPositions, Error * error/*=NULL*/, Array<uint> * badFaces/*=NULL*/) const
 {
@@ -929,7 +928,6 @@ Reducer::Mesh * MeshBuilder::buildReducerMesh(bool weldPositions, Error * error/
 
     return builder.release();
 }
-#endif // 0
 
 
 bool MeshBuilder::buildPositions(Array<Vector3> & positionArray)

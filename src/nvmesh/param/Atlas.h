@@ -154,7 +154,7 @@ namespace nv
         Vector2 computeParametricBounds() const;
 
 
-        float scale;
+        float scale = 1.0f;
         uint vertexMapWidth;
         uint vertexMapHeight;
 
