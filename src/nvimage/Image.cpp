@@ -1,7 +1,7 @@
 // This code is in the public domain -- castanyo@yahoo.es
 
 #include "Image.h"
-#include "ImageIO.h"
+//#include "ImageIO.h"
 
 #include "nvmath/Color.h"
 
@@ -96,7 +96,7 @@ void Image::resize(uint w, uint h, uint d/*= 1*/) {
     swap(m_data, img.m_data);
 }
 
-bool Image::load(const char * name)
+/*bool Image::load(const char * name)
 {
     free();
 
@@ -112,7 +112,7 @@ bool Image::load(const char * name)
     swap(m_data, img->m_data);
 
     return true;
-}
+}*/
 
 void Image::wrap(void * data, uint w, uint h, uint d)
 {

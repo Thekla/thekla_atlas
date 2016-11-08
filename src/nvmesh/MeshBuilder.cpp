@@ -9,11 +9,6 @@
 #include "halfedge/Vertex.h"
 #include "halfedge/Face.h"
 
-#include "reducer/ReducerBuilder.h"
-#include "reducer/ReducerMesh.h"
-#include "reducer/ReducerVertex.h"
-#include "reducer/ReducerFace.h"
-
 #include "weld/Weld.h"
 
 #include "nvmath/Box.h"
@@ -857,76 +852,6 @@ HalfEdge::Mesh * MeshBuilder::buildHalfEdgeMesh(bool weldPositions, Error * erro
     //mesh->sewBoundary();
 
     return mesh.release();
-}
-
-// Get half edge mesh.
-Reducer::Mesh * MeshBuilder::buildReducerMesh(bool weldPositions, Error * error/*=NULL*/, Array<uint> * badFaces/*=NULL*/) const
-{
-    if (error != NULL) *error = Error_None;
-
-    const uint vertexCount = d->vertexArray.count();
-    Reducer::Builder builder(0U);
-
-    for(uint v = 0; v < vertexCount; v++)
-    {
-        /*Reducer::Vertex * vertex =*/ builder.addVertex(d->posArray[d->vertexArray[v].pos]);
-        //if (d->vertexArray[v].col[0] != NIL) vertex->col = d->colArray[0][d->vertexArray[v].col[0]];
-    }
-
-    if (weldPositions) {
-        builder.linkColocalVertices();
-    }
-    else {
-        // Build canonical map from position indices.
-        Array<uint> canonicalMap(vertexCount);
-        
-        foreach (i, d->vertexArray) {
-            canonicalMap.append(d->vertexArray[i].pos);
-        }
-
-        builder.linkColocalVerticesWithCanonicalMap(canonicalMap);
-    }
-
-    const uint faceCount = d->faceArray.count();
-    for (uint f = 0; f < faceCount; f++)
-    {
-        uint firstIndex = d->faceArray[f].firstIndex;
-        uint indexCount = d->faceArray[f].indexCount;
-        uint material = d->faceArray[f].material;
-
-        Reducer::Face * face = builder.addFace(d->indexArray, firstIndex, indexCount);
-        
-        // @@ This is too late, removing the face here will leave the mesh improperly connected.
-        /*if (face->area() <= FLT_EPSILON) {
-            mesh->remove(face);
-            face = NULL;
-        }*/
-
-        if (face == NULL) {
-            // Non manifold mesh.
-            if (error != NULL) *error = Error_NonManifoldEdge;
-            if (badFaces != NULL) {
-                badFaces->append(d->faceArray[f].id);
-            }
-            //return NULL; // IC: Ignore error and continue building the mesh.
-        }
-
-        if (face != NULL) {
-            face->material = material;
-        }
-    }
-
-    // We cannot fix functions here, because this would introduce new vertices and these vertices won't have the corresponding builder data.
-
-    // Maybe the builder should perform the search for T-junctions and update the vertex data directly.
-
-    // For now, we don't fix T-junctions at export time, but only during parameterization.
-
-    //mesh->fixBoundaryJunctions();
-
-    //mesh->sewBoundary();
-
-    return builder.release();
 }
 
 
