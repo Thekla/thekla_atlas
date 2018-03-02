@@ -14,6 +14,10 @@ extern "C" void *EF_realloc(void * oldBuffer, size_t newSize);
 extern "C" void EF_free(void * address);
 #endif
 
+#if defined AARCH4 || defined __aarch64__ || defined _AARCH64
+#include <malloc.h>
+#endif // POSH_CPU_STRING*/
+
 using namespace nv;
 
 #if NV_OVERRIDE_ALLOC
@@ -131,7 +135,7 @@ void * nv::aligned_malloc(size_t size, size_t alignment)
     posix_memalign(&ptr, alignment, size);
     return ptr;
 #elif NV_OS_LINUX
-    return memalign(alignment, size)
+    return memalign(alignment, size);
 #else // NV_OS_ORBIS || NV_OS_IOS
     // @@ IC: iOS appears to be 16 byte aligned, should we check alignment and assert if we request a higher alignment factor?
     return ::malloc(size);

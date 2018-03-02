@@ -56,13 +56,13 @@
 #       define nvDebugBreak()       __asm__ volatile ("trap")
 #   elif NV_CC_GNUC && NV_CPU_X86 && NV_OS_DARWIN
 #       define nvDebugBreak()       __asm__ volatile ("int3")
-#   elif NV_CC_GNUC && NV_CPU_X86 
+#   elif NV_CC_GNUC && NV_CPU_X86
 #       define nvDebugBreak()       __asm__ ( "int %0" : :"I"(3) )
 #   elif NV_OS_ORBIS
 #       define nvDebugBreak()       __asm volatile ("int $0x41")
 #   else
 #       include <signal.h>
-#       define nvDebugBreak()       raise(SIGTRAP); 
+#       define nvDebugBreak()       raise(SIGTRAP);
 // define nvDebugBreak()        *((int *)(0)) = 0
 */
 #   endif
@@ -73,7 +73,7 @@
 #   define nvExpect(expr) __builtin_expect((expr) != 0, true)
 #endif
 
-#if NV_CC_CLANG 
+#if NV_CC_CLANG
 #   if __has_feature(attribute_analyzer_noreturn)
 #       define NV_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
 #   else
@@ -194,16 +194,16 @@ namespace nv
     #if NV_OS_DARWIN
         return true;    // IC: Not sure what ranges are OK on OSX.
     #endif
-        
+
     #if NV_CPU_X86_64
         if (ptr == NULL) return true;
         if (reinterpret_cast<uint64>(ptr) < 0x10000ULL) return false;
         if (reinterpret_cast<uint64>(ptr) >= 0x000007FFFFFEFFFFULL) return false;
     #else
-	    if (reinterpret_cast<uint32>(ptr) == 0xcccccccc) return false;
-	    if (reinterpret_cast<uint32>(ptr) == 0xcdcdcdcd) return false;
-	    if (reinterpret_cast<uint32>(ptr) == 0xdddddddd) return false;
-	    if (reinterpret_cast<uint32>(ptr) == 0xffffffff) return false;
+	    if (reinterpret_cast<uintptr_t>(ptr) == 0xcccccccc) return false;
+	    if (reinterpret_cast<uintptr_t>(ptr) == 0xcdcdcdcd) return false;
+	    if (reinterpret_cast<uintptr_t>(ptr) == 0xdddddddd) return false;
+	    if (reinterpret_cast<uintptr_t>(ptr) == 0xffffffff) return false;
     #endif
         return true;
     }
