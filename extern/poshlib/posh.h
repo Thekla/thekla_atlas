@@ -234,14 +234,9 @@ Metrowerks:
 #  define POSH_COMPILER_HPCC 1 
 #endif
 
-#if defined __GNUC__ && !defined __clang__
+#if defined __GNUC__
 #  define POSH_COMPILER_STRING "Gnu GCC"
 #  define POSH_COMPILER_GCC 1
-#endif
-
-#if defined __clang__
-#  define POSH_COMPILER_STRING "Clang"
-#  define POSH_COMPILER_CLANG 1
 #endif
 
 #if defined __APPLE_CC__
@@ -298,11 +293,6 @@ Metrowerks:
 #  define POSH_OS_STRING "Linux"
 #endif
 
-#if defined __FreeBSD__
-#  define POSH_OS_FREEBSD 1 
-#  define POSH_OS_STRING "FreeBSD"
-#endif
-
 #if defined __CYGWIN32__
 #  define POSH_OS_CYGWIN32 1
 #  define POSH_OS_STRING "Cygwin"
@@ -319,7 +309,7 @@ Metrowerks:
 #  define POSH_OS_STRING "MinGW"
 #endif
 
-#if defined GO32 && defined DJGPP && defined __MSDOS__
+#if defined GO32 && defined DJGPP && defined __MSDOS__ 
 #  define POSH_OS_GO32 1
 #  define POSH_OS_STRING "GO32/MS-DOS"
 #endif
@@ -336,18 +326,9 @@ Metrowerks:
 #  define POSH_OS_STRING "UNICOS"
 #endif
 
-//ACS if we're in xcode, look at the target conditionals to figure out if this is ios or osx
-#if defined __APPLE__
-#  include "TargetConditionals.h"
-#endif
-#if TARGET_OS_IPHONE
-#    define POSH_OS_IOS 1
-#    define POSH_OS_STRING "iOS"
-#else
-#  if ( defined __MWERKS__ && defined __powerc && !defined macintosh ) || defined __APPLE_CC__ || defined macosx
-#    define POSH_OS_OSX 1
-#    define POSH_OS_STRING "MacOS X"
-#  endif
+#if ( defined __MWERKS__ && defined __powerc && !defined macintosh ) || defined __APPLE_CC__ || defined macosx
+#  define POSH_OS_OSX 1
+#  define POSH_OS_STRING "MacOS X"
 #endif
 
 #if defined __sun__ || defined sun || defined __sun || defined __solaris__
@@ -403,18 +384,14 @@ Metrowerks:
 #  define POSH_OS_STRING "Windows CE"
 #endif
 
-#if defined _XBOX || defined _XBOX_VER
+#if defined _XBOX
 #  define POSH_OS_XBOX 1
 #  define POSH_OS_STRING "XBOX"
 #endif
 
-#if defined __ORBIS__
-#   define POSH_OS_ORBIS
-#endif
-
 #if defined _WIN32 || defined WIN32 || defined __NT__ || defined __WIN32__
-#  if !defined POSH_OS_XBOX
 #  define POSH_OS_WIN32 1
+#  if !defined POSH_OS_XBOX
 #     if defined _WIN64
 #        define POSH_OS_WIN64 1
 #        define POSH_OS_STRING "Win64"
@@ -452,7 +429,7 @@ Metrowerks:
 #  define POSH_CPU_STRING "MC68000"
 #endif
 
-#if defined __PPC__ || defined __POWERPC__  || defined powerpc || defined _POWER || defined __ppc__ || defined __powerpc__ || defined _M_PPC
+#if defined __PPC__ || defined __POWERPC__  || defined powerpc || defined _POWER || defined __ppc__ || defined __powerpc__
 #  define POSH_CPU_PPC 1
 #  if !defined POSH_CPU_STRING
 #    if defined __powerpc64__
@@ -496,6 +473,11 @@ Metrowerks:
 #if defined ARM || defined __arm__ || defined _ARM
 #  define POSH_CPU_STRONGARM 1
 #  define POSH_CPU_STRING "ARM"
+#endif
+
+#if defined AARCH64 || defined __aarch64__ || defined _AARCH64
+#  define POSH_CPU_STRONGARM 1
+#  define POSH_CPU_STRING "AARCH64"
 #endif
 
 #if defined mips || defined __mips__ || defined __MIPS__ || defined _MIPS
@@ -723,14 +705,14 @@ typedef unsigned long long posh_u64_t;
 #endif
 
 /* hack */
-/*#ifdef __MINGW32__
+#ifdef __MINGW32__
 #undef POSH_I64
 #undef POSH_U64
 #undef POSH_I64_PRINTF_PREFIX
 #define POSH_I64( x ) ((posh_i64_t)x)
 #define POSH_U64( x ) ((posh_u64_t)x)
 #define POSH_I64_PRINTF_PREFIX "I64"
-#endif*/
+#endif
 
 #ifdef FORCE_DOXYGEN
 typedef long long posh_i64_t;
