@@ -1,7 +1,7 @@
 // This code is in the public domain -- Ignacio Castaño <castano@gmail.com>
 
 #include "BaseMesh.h"
-#include "Stream.h"
+#include "nvcore/Stream.h"
 #include "nvmath/TypeSerialization.h"
 
 
