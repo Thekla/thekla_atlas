@@ -36,6 +36,7 @@ Thekla :: struct {
 
         mapper: Atlas_Mapper;
         mapper_options: union {
+            pad1: s32;
         };
 
         packer: Atlas_Packer;
@@ -48,6 +49,7 @@ Thekla :: struct {
             };
         };
     }
+    #assert(size_of(Atlas_Options) == 56);
 
 
     Atlas_Input_Vertex :: struct {
@@ -91,11 +93,6 @@ Thekla :: struct {
         Invalid_Mesh_Non_Manifold;
         Not_Implemented;
     }
-
-
-    // void atlas_set_default_options(Atlas_Options * options);
-    // Atlas_Output_Mesh * atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error);
-    // void atlas_free(Atlas_Output_Mesh * output);
 
     atlas_set_default_options :: (options: *Atlas_Options) #foreign thekla_atlas "?atlas_set_default_options@Thekla@@YAXPEAUAtlas_Options@1@@Z";
     atlas_generate :: (input: *Atlas_Input_Mesh, options: *Atlas_Options, error: *Atlas_Error) -> *Atlas_Output_Mesh #foreign thekla_atlas "?atlas_generate@Thekla@@YAPEAUAtlas_Output_Mesh@1@PEBUAtlas_Input_Mesh@1@PEBUAtlas_Options@1@PEAW4Atlas_Error@1@@Z";
