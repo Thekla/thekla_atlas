@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvmesh", "nvmesh\nvmesh.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nvimage", "nvimage\nvimage.vcxproj", "{AACBE57F-FF9D-4D15-86DD-A30232EB9102}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "thekla_atlas_test", "thekla_atlas_test\thekla_atlas_test.vcxproj", "{F1782958-C287-4D45-8D5C-11B88BFC682B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EF943121-21F5-44B6-A8B5-C628F95CE070} = {EF943121-21F5-44B6-A8B5-C628F95CE070}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -26,6 +31,7 @@ Global
 		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Debug|Win32.ActiveCfg = Debug|Win32
 		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Debug|Win32.Build.0 = Debug|Win32
 		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Debug|x64.ActiveCfg = Debug|x64
+		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Debug|x64.Build.0 = Debug|x64
 		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Release|Win32.ActiveCfg = Release|Win32
 		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Release|Win32.Build.0 = Release|Win32
 		{EF943121-21F5-44B6-A8B5-C628F95CE070}.Release|x64.ActiveCfg = Release|x64
@@ -62,6 +68,14 @@ Global
 		{AACBE57F-FF9D-4D15-86DD-A30232EB9102}.Release|Win32.Build.0 = Release|Win32
 		{AACBE57F-FF9D-4D15-86DD-A30232EB9102}.Release|x64.ActiveCfg = Release|x64
 		{AACBE57F-FF9D-4D15-86DD-A30232EB9102}.Release|x64.Build.0 = Release|x64
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Debug|Win32.Build.0 = Debug|Win32
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Debug|x64.ActiveCfg = Debug|x64
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Debug|x64.Build.0 = Debug|x64
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Release|Win32.ActiveCfg = Release|Win32
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Release|Win32.Build.0 = Release|Win32
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Release|x64.ActiveCfg = Release|x64
+		{F1782958-C287-4D45-8D5C-11B88BFC682B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

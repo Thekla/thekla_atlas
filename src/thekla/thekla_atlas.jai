@@ -4,49 +4,49 @@
 Thekla :: struct {
     Atlas_Charter :: enum u32 {
         Witness;
-    Extract;
-    Default :: Witness;
+        Extract;
+        Default :: Witness;
     }
 
     Atlas_Mapper :: enum u32 {
         LSCM;
-    Default :: LSCM;
+        Default :: LSCM;
     }
 
     Atlas_Packer :: enum u32 {
         Witness;
-    Default :: Witness;
+        Default :: Witness;
     }
 
     Atlas_Options :: struct {
         charter: Atlas_Charter;
         charter_options: union {
-        witness: struct {
-        proxy_fit_metric_weight: float;
-        roundness_metric_weight: float;
-        straightness_metric_weight: float;
-        normal_seam_metric_weight: float;
-        texture_seam_metric_weight: float;
-        max_chart_area: float;
-        max_boundary_length: float;
-        };
-                 extract: struct {
-                 };
+            witness: struct {
+                proxy_fit_metric_weight: float;
+                roundness_metric_weight: float;
+                straightness_metric_weight: float;
+                normal_seam_metric_weight: float;
+                texture_seam_metric_weight: float;
+                max_chart_area: float;
+                max_boundary_length: float;
+            };
+            extract: struct {
+            };
         };
 
-                         mapper: Atlas_Mapper;
-                         mapper_options: union {
-                         };
+        mapper: Atlas_Mapper;
+        mapper_options: union {
+        };
 
-                                         packer: Atlas_Packer;
-                                         packer_options: union {
-                                         witness: struct {
-                                         packing_quality: s32;
-                                         texel_area: float;      // This is not really texel area, but 1 / texel width?
-                                         block_align: bool;      // Align charts to 4x4 blocks. 
-                                         conservative: bool;     // Pack charts with extra padding.
-                                         };
-                                         };
+        packer: Atlas_Packer;
+        packer_options: union {
+            witness: struct {
+                packing_quality: s32;
+                texel_area: float;      // This is not really texel area, but 1 / texel width?
+                block_align: bool;      // Align charts to 4x4 blocks. 
+                conservative: bool;     // Pack charts with extra padding.
+            };
+        };
     }
 
 
@@ -85,13 +85,17 @@ Thekla :: struct {
 
     Atlas_Error :: enum {
         Success;
-    Invalid_Args;
-    Invalid_Options;
-    Invalid_Mesh;
-    Invalid_Mesh_Non_Manifold;
-    Not_Implemented;
+        Invalid_Args;
+        Invalid_Options;
+        Invalid_Mesh;
+        Invalid_Mesh_Non_Manifold;
+        Not_Implemented;
     }
 
+
+    // void atlas_set_default_options(Atlas_Options * options);
+    // Atlas_Output_Mesh * atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error);
+    // void atlas_free(Atlas_Output_Mesh * output);
 
     atlas_set_default_options :: (options: *Atlas_Options) #foreign thekla_atlas "?atlas_set_default_options@Thekla@@YAXPEAUAtlas_Options@1@@Z";
     atlas_generate :: (input: *Atlas_Input_Mesh, options: *Atlas_Options, error: *Atlas_Error) -> *Atlas_Output_Mesh #foreign thekla_atlas "?atlas_generate@Thekla@@YAPEAUAtlas_Output_Mesh@1@PEBUAtlas_Input_Mesh@1@PEBUAtlas_Options@1@PEAW4Atlas_Error@1@@Z";

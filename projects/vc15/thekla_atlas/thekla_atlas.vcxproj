@@ -142,11 +142,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\thekla\thekla_atlas.cpp" />
-    <ClCompile Include="..\..\..\src\thekla\thekla_atlas_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\thekla\thekla_atlas.h" />
-    <ClInclude Include="..\..\..\src\thekla\thekla_mesh_load.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\nvcore\nvcore.vcxproj">
