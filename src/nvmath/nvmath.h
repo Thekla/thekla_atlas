@@ -178,10 +178,8 @@ namespace nv
     {
 #if NV_OS_WIN32 || NV_OS_XBOX || NV_OS_DURANGO
         return _finite(f) != 0;
-#elif NV_OS_DARWIN || NV_OS_FREEBSD || NV_OS_OPENBSD || NV_OS_ORBIS
+#elif NV_OS_DARWIN || NV_OS_FREEBSD || NV_OS_OPENBSD || NV_OS_ORBIS || NV_OS_LINUX
         return isfinite(f);
-#elif NV_OS_LINUX
-        return finitef(f);
 #else
 #   error "isFinite not supported"
 #endif
@@ -193,10 +191,8 @@ namespace nv
     {
 #if NV_OS_WIN32 || NV_OS_XBOX || NV_OS_DURANGO
         return _isnan(f) != 0;
-#elif NV_OS_DARWIN || NV_OS_FREEBSD || NV_OS_OPENBSD || NV_OS_ORBIS
+#elif NV_OS_DARWIN || NV_OS_FREEBSD || NV_OS_OPENBSD || NV_OS_ORBIS || NV_OS_LINUX
         return isnan(f);
-#elif NV_OS_LINUX
-        return isnanf(f);
 #else
 #   error "isNan not supported"
 #endif
