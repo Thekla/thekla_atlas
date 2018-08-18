@@ -303,6 +303,11 @@ Metrowerks:
 #  define POSH_OS_STRING "FreeBSD"
 #endif
 
+#if defined __HAIKU__
+#  define POSH_OS_HAIKU 1
+#  define POSH_OS_STRING "Haiku"
+#endif
+
 #if defined __CYGWIN32__
 #  define POSH_OS_CYGWIN32 1
 #  define POSH_OS_STRING "Cygwin"
