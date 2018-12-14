@@ -595,11 +595,11 @@ void MeshCharts::parameterizeCharts()
                 // If the orthogonal projection produces better results, just use that.
                 // @@ It may be dangerous to do this, because isValid() does not detect self-overlaps.
                 // @@ Another problem is that with very thin patches with nearly zero parametric area, the results of our metric are not accurate.
-                /*if (orthogonalQuality.isValid() && orthogonalQuality.rmsStretchMetric() < lscmQuality.rmsStretchMetric()) {
+                if (orthogonalQuality.isValid() && orthogonalQuality.rmsStretchMetric() < lscmQuality.rmsStretchMetric()) {
                     computeOrthogonalProjectionMap(chart->unifiedMesh());
                     chartParameterizationQuality = orthogonalQuality;
                 }
-                else*/ {
+                else {
                     chartParameterizationQuality = lscmQuality;
                 }
 
