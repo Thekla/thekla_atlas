@@ -26,7 +26,7 @@ using namespace nv;
 
 #if DEBUG_OUTPUT
 
-#include "nvimage/ImageIO.h"
+//#include "nvimage/ImageIO.h"
 
 namespace
 {
@@ -850,8 +850,8 @@ void AtlasPacker::packCharts(int quality, float texelsPerUnit, bool blockAligned
 
 #if DEBUG_OUTPUT
     //outputDebugBitmap("debug_packer_final.tga", m_bitmap, w, h);
-    //outputDebugImage("debug_packer_final.tga", m_debug_bitmap, w, h);
-    ImageIO::save("debug_packer_final.tga", &m_debug_bitmap);
+    outputDebugImage("debug_packer_final.tga", m_debug_bitmap, w, h);
+    //ImageIO::save("debug_packer_final.tga", &m_debug_bitmap);
 #endif
 }
 

@@ -8,7 +8,7 @@ namespace nv
 {
     namespace HalfEdge { class Mesh; }
 
-    bool computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh);
+    bool computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh, bool pinned_boundary = false);
 
 } // nv namespace
 

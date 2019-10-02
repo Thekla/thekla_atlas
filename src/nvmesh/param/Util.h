@@ -10,6 +10,7 @@ namespace nv {
     bool isTriangularMesh(const HalfEdge::Mesh * mesh);
 
     uint countMeshTriangles(const HalfEdge::Mesh * mesh);
+    uint countBoundaryVertices(const HalfEdge::Mesh * mesh);
     const HalfEdge::Vertex * findBoundaryVertex(const HalfEdge::Mesh * mesh);
 
     HalfEdge::Mesh * unifyVertices(const HalfEdge::Mesh * inputMesh);

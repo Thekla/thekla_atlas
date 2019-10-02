@@ -14,11 +14,11 @@ using namespace nv;
 
 void MeshTopology::buildTopologyInfo(const HalfEdge::Mesh * mesh)
 {
-    const uint vertexCount = mesh->colocalVertexCount();
+    const uint vertexCount = mesh->colocalVertexCount;
     const uint faceCount = mesh->faceCount();
     const uint edgeCount = mesh->edgeCount();
 
-    nvDebug( "--- Building mesh topology:\n" );
+    //nvDebug( "--- Building mesh topology:\n" );
 
     Array<uint> stack(faceCount);
 
@@ -26,7 +26,7 @@ void MeshTopology::buildTopologyInfo(const HalfEdge::Mesh * mesh)
     bitFlags.clearAll();
 
     // Compute connectivity.
-    nvDebug( "---   Computing connectivity.\n" );
+    //nvDebug( "---   Computing connectivity.\n" );
 
     m_connectedCount = 0;
 
@@ -60,11 +60,11 @@ void MeshTopology::buildTopologyInfo(const HalfEdge::Mesh * mesh)
         }
     }
     nvCheck(stack.isEmpty());
-    nvDebug( "---   %d connected components.\n", m_connectedCount );
+    //nvDebug( "---   %d connected components.\n", m_connectedCount );
 
 
     // Count boundary loops.
-    nvDebug( "---   Counting boundary loops.\n" );
+    //nvDebug( "---   Counting boundary loops.\n" );
     m_boundaryCount = 0;
 
     bitFlags.resize(edgeCount);
@@ -90,19 +90,19 @@ void MeshTopology::buildTopologyInfo(const HalfEdge::Mesh * mesh)
             } while(startEdge != edge);
         }
     }
-    nvDebug("---   %d boundary loops found.\n", m_boundaryCount );
+    //nvDebug("---   %d boundary loops found.\n", m_boundaryCount );
 
 
     // Compute euler number.
     m_eulerNumber = vertexCount - edgeCount + faceCount;
-    nvDebug("---   Euler number: %d.\n", m_eulerNumber);
+    //nvDebug("---   Euler number: %d.\n", m_eulerNumber);
 
 
     // Compute genus. (only valid on closed connected surfaces)
     m_genus = -1;
     if( isClosed() && isConnected() ) {
         m_genus = (2 - m_eulerNumber) / 2;
-        nvDebug("---   Genus: %d.\n", m_genus);
+        //nvDebug("---   Genus: %d.\n", m_genus);
     }
 }
 

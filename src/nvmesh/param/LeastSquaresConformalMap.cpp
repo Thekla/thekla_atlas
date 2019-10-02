@@ -379,7 +379,7 @@ namespace
 } // namespace
 
 
-bool nv::computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh)
+bool nv::computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh, bool pinned_boundaries/*=false*/)
 {
     nvDebugCheck(mesh != NULL);
 
@@ -391,8 +391,12 @@ bool nv::computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh)
     const uint N = 2 * countMeshTriangles(mesh);
 
     // N is the number of equations (one per triangle)
-    // D is the number of variables (one per vertex; there are 2 pinned vertices).
-	if (N < D - 4) {
+    // D is the number of variables (one per vertex).
+    // P is the number of locked parameters.
+    uint P = 4;
+    if (pinned_boundaries) P = 2 * countBoundaryVertices(mesh);
+
+	if (N < D - P || D <= P) {
 		return false;
 	}
 
@@ -403,22 +407,43 @@ bool nv::computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh)
     // Fill b:
     b.fill(0.0f);
 
+
+    nv::Array<uint> lockedParameters;
+
     // Fill x:
-    HalfEdge::Vertex * v0;
-    HalfEdge::Vertex * v1;
-    if (!findApproximateDiameterVertices(mesh, &v0, &v1))
-    {
-        // Mesh has no boundaries.
-        return false;
+    if (!pinned_boundaries) {
+        HalfEdge::Vertex * v0;
+        HalfEdge::Vertex * v1;
+        if (!findApproximateDiameterVertices(mesh, &v0, &v1)) {
+            // Mesh has no boundaries.
+            return false;
+        }
+        if (v0->tex == v1->tex) {
+            // LSCM expects an existing parameterization.
+            return false;
+        }
+
+        // Pin two vertices:
+        lockedParameters.resize(4);
+        lockedParameters[0] = 2 * v0->id + 0;
+        lockedParameters[1] = 2 * v0->id + 1;
+        lockedParameters[2] = 2 * v1->id + 0;
+        lockedParameters[3] = 2 * v1->id + 1;
     }
-    if (v0->tex == v1->tex)
-    {
-        // LSCM expects an existing parameterization.
-        return false;
+    else {
+        // Pin all boundary vertices:
+        lockedParameters.reserve(P);
+
+        const uint vertexCount = mesh->vertexCount();
+        for (uint v = 0; v < vertexCount; v++) {
+            const HalfEdge::Vertex * vertex = mesh->vertexAt(v);
+            if (vertex->isBoundary()) {
+                lockedParameters.append(2 * vertex->id + 0).append(2 * vertex->id + 1);
+            }
+        }
     }
 
-    for (uint v = 0; v < vertexCount; v++)
-    {
+    for (uint v = 0; v < vertexCount; v++) {
         HalfEdge::Vertex * vertex = mesh->vertexAt(v);
         nvDebugCheck(vertex != NULL);
 
@@ -459,16 +484,9 @@ bool nv::computeLeastSquaresConformalMap(HalfEdge::Mesh * mesh)
         }
     }
 
-    const uint lockedParameters[] =
-    {
-        2 * v0->id + 0,
-        2 * v0->id + 1,
-        2 * v1->id + 0,
-        2 * v1->id + 1
-    };
 
     // Solve
-    LeastSquaresSolver(A, b, x, lockedParameters, 4, 0.000001f);
+    LeastSquaresSolver(A, b, x, lockedParameters.buffer(), lockedParameters.count(), 0.000001f);
 
     // Map x back to texcoords:
     for (uint v = 0; v < vertexCount; v++)

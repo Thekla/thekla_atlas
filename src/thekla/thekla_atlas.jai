@@ -35,15 +35,16 @@ Thekla :: struct {
         };
 
         mapper: Atlas_Mapper;
-        mapper_options: union {
-            pad1: s32;
+        mapper_options: struct {
+            preserve_uvs: bool;
+            preserve_boundary: bool;
         };
 
         packer: Atlas_Packer;
         packer_options: union {
             witness: struct {
                 packing_quality: s32;
-                texel_area: float;      // This is not really texel area, but 1 / texel width?
+                texels_per_unit: float; // Unit to texel scale. e.g. a 1x1 quad with texelsPerUnit of 32 will take up approximately 32x32 texels in the atlas.
                 block_align: bool;      // Align charts to 4x4 blocks. 
                 conservative: bool;     // Pack charts with extra padding.
             };

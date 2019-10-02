@@ -19,7 +19,7 @@
 using namespace nv;
 using namespace HalfEdge;
 
-Mesh::Mesh() : m_colocalVertexCount(0)
+Mesh::Mesh() : colocalVertexCount(0)
 {
     errorCount = 0;
 }
@@ -43,7 +43,7 @@ Mesh::Mesh(const Mesh * mesh)
         m_vertexArray[v]->tex = vertex->tex;
     }
 
-    m_colocalVertexCount = vertexCount;
+    this->colocalVertexCount = vertexCount;
 
 
     // Copy mesh faces.
@@ -135,7 +135,7 @@ v->setTex(vertex->tex());
 /// Link colocal vertices based on geometric location only.
 void Mesh::linkColocals()
 {
-    nvDebug("--- Linking colocals:\n");
+    //nvDebug("--- Linking colocals:\n");
 
     const uint vertexCount = this->vertexCount();
     HashMap<Vector3, Vertex *> vertexMap(vertexCount);
@@ -155,16 +155,16 @@ void Mesh::linkColocals()
         }
     }
 
-    m_colocalVertexCount = vertexMap.count();
+    this->colocalVertexCount = vertexMap.count();
 
-    nvDebug("---   %d vertex positions.\n", m_colocalVertexCount);
+    //nvDebug("---   %d vertex positions.\n", this->colocalVertexCount);
 
     // @@ Remove duplicated vertices? or just leave them as colocals?
 }
 
 void Mesh::linkColocalsWithCanonicalMap(const Array<uint> & canonicalMap)
 {
-    nvDebug("--- Linking colocals:\n");
+    //nvDebug("--- Linking colocals:\n");
 
     uint vertexMapSize = 0;
     foreach(i, canonicalMap) {
@@ -174,7 +174,7 @@ void Mesh::linkColocalsWithCanonicalMap(const Array<uint> & canonicalMap)
     Array<Vertex *> vertexMap;
     vertexMap.resize(vertexMapSize, NULL);
 
-    m_colocalVertexCount = 0;
+    this->colocalVertexCount = 0;
 
     const uint vertexCount = this->vertexCount();
     for (uint v = 0; v < vertexCount; v++)
@@ -190,11 +190,11 @@ void Mesh::linkColocalsWithCanonicalMap(const Array<uint> & canonicalMap)
         else
         {
             vertexMap[canonicalMap[v]] = vertex;
-            m_colocalVertexCount++;
+            this->colocalVertexCount++;
         }
     }
 
-    nvDebug("---   %d vertex positions.\n", m_colocalVertexCount);
+    //nvDebug("---   %d vertex positions.\n", this->colocalVertexCount);
 }
 
 
@@ -420,7 +420,7 @@ Edge * Mesh::findEdge(uint i, uint j) const
 /// Link boundary edges once the mesh has been created.
 void Mesh::linkBoundary()
 {
-    nvDebug("--- Linking boundaries:\n");
+    //nvDebug("--- Linking boundaries:\n");
 
     int num = 0;
 
@@ -436,7 +436,7 @@ void Mesh::linkBoundary()
             uint j = edge->next->from()->id;
 
             Key key(j,i);
-            nvCheck(!m_edgeMap.get(key));
+            //nvCheck(!m_edgeMap.get(key));
 
             pair->vertex = m_vertexArray[j];
             m_edgeMap.add(key, pair);
@@ -456,7 +456,7 @@ void Mesh::linkBoundary()
         }
     }
 
-    nvDebug("---   %d boundary edges.\n", num);
+    //nvDebug("---   %d boundary edges.\n", num);
 }
 
 /// Link this boundary edge.
@@ -668,7 +668,7 @@ bool Mesh::splitBoundaryEdges() {
         }
     }
 
-    nvDebug("Fixing T-junctions:\n");
+    //nvDebug("Fixing T-junctions:\n");
 
     int splitCount = 0;
 
@@ -719,7 +719,9 @@ bool Mesh::splitBoundaryEdges() {
         }
     }
 
-    nvDebug(" - %d edges split.\n", splitCount);
+    if (splitCount) {
+        nvDebug("--- Split %d edges to fix T-junctions.\n", splitCount);
+    }
 
     nvDebugCheck(isValid());
 

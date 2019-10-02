@@ -53,14 +53,14 @@ namespace nv
         // Add mesh charts and takes ownership.
         void addMeshCharts(MeshCharts * meshCharts);
 
-        void extractCharts(const HalfEdge::Mesh * mesh);
+        void extractCharts(const HalfEdge::Mesh * mesh, bool ensure_disk_charts);
         void computeCharts(const HalfEdge::Mesh * mesh, const SegmentationSettings & settings, const Array<uint> & unchartedMaterialArray);
 
 
         // Compute a trivial seamless texture similar to ZBrush.
         //bool computeSeamlessTextureAtlas(bool groupFaces = true, bool scaleTiles = false, uint w = 1024, uint h = 1024);
 
-        void parameterizeCharts();
+        void parameterizeCharts(bool preserve_uvs, bool pinned_boundary);
 
         // Pack charts in the smallest possible rectangle.
         float packCharts(int quality, float texelArea, bool blockAlign, bool conservative);
@@ -88,12 +88,12 @@ namespace nv
         void computeVertexMap(const Array<uint> & unchartedMaterialArray);
 
         // Extract the charts of the input mesh.
-        void extractCharts();
+        void extractCharts(bool ensure_disk_charts);
 
         // Compute charts using a simple segmentation algorithm.
         void computeCharts(const SegmentationSettings & settings, const Array<uint> & unchartedMaterialArray);
 
-        void parameterizeCharts();
+        void parameterizeCharts(bool preserve_uvs, bool pinned_boundary);
 
         uint faceChartAt(uint i) const { return m_faceChart[i]; }
         uint faceIndexWithinChartAt(uint i) const { return m_faceIndex[i]; }
@@ -121,7 +121,7 @@ namespace nv
 
         Chart();
 
-        void build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceArray);
+        void build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceArray, bool from_uvs = false);
         void buildVertexMap(const HalfEdge::Mesh * originalMesh, const Array<uint> & unchartedMaterialArray);
 
         bool closeHoles();

@@ -154,7 +154,7 @@ void Thekla::atlas_set_default_options(Atlas_Options * options) {
 
         options->packer = Atlas_Packer_Default;
         options->packer_options.witness.packing_quality = 0;
-        options->packer_options.witness.texel_area = 8;
+        options->packer_options.witness.texels_per_unit = 8;
         options->packer_options.witness.block_align = true;
         options->packer_options.witness.conservative = false;
     }
@@ -166,7 +166,7 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
     if (input == NULL || options == NULL || error == NULL) return set_error(error, Atlas_Error_Invalid_Args);
 
     // Validate options.
-    if (options->charter != Atlas_Charter_Witness) {
+    if (options->charter != Atlas_Charter_Witness && options->charter != Atlas_Charter_Extract) {
         return set_error(error, Atlas_Error_Invalid_Options);
     }
     if (options->charter == Atlas_Charter_Witness) {
@@ -215,7 +215,9 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
 
     // Charter.
     if (options->charter == Atlas_Charter_Extract) {
-        return set_error(error, Atlas_Error_Not_Implemented);
+        // Let's only care about the chart topology if we have to run the LSCM mapper from scratch
+        bool ensure_disk_charts = options->mapper_options.preserve_uvs == false || options->mapper_options.preserve_boundary == false;
+        atlas.extractCharts(mesh.ptr(), ensure_disk_charts);
     }
     else if (options->charter == Atlas_Charter_Witness) {
         SegmentationSettings segmentation_settings;
@@ -232,19 +234,19 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
     }
 
     // Mapper.
-    if (options->mapper == Atlas_Mapper_LSCM) {
-        atlas.parameterizeCharts();
-    }
 
+    if (options->mapper == Atlas_Mapper_LSCM) {
+        atlas.parameterizeCharts(options->mapper_options.preserve_uvs, options->mapper_options.preserve_boundary);
+    }
 
     // Packer.
     if (options->packer == Atlas_Packer_Witness) {
         int packing_quality = options->packer_options.witness.packing_quality;
-        float texel_area = options->packer_options.witness.texel_area;
-        int block_align = options->packer_options.witness.block_align;
-        int conservative = options->packer_options.witness.conservative;
+        float texels_per_unit = options->packer_options.witness.texels_per_unit;
+        bool block_align = options->packer_options.witness.block_align;
+        bool conservative = options->packer_options.witness.conservative;
 
-        /*float utilization =*/ atlas.packCharts(packing_quality, texel_area, block_align, conservative);
+        /*float utilization =*/ atlas.packCharts(packing_quality, texels_per_unit, block_align, conservative);
     }
 
 
@@ -261,3 +263,9 @@ void Thekla::atlas_free(Atlas_Output_Mesh * output) {
     }
 }
 
+
+typedef void Atlas_Debug_Output(const char * output);
+
+void Thekla::atlas_set_debug_output(Atlas_Debug_Output * output) {
+    // @@ 
+}

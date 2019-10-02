@@ -54,7 +54,7 @@ namespace nv
 
             void linkColocals();
             void linkColocalsWithCanonicalMap(const Array<uint> & canonicalMap);
-            void resetColocalLinks();
+            //void resetColocalLinks();
 
             Face * addFace();
             Face * addFace(uint v0, uint v1, uint v2);
@@ -93,7 +93,7 @@ namespace nv
             const Vertex * vertexAt(int i) const { return m_vertexArray[i]; }
             Vertex * vertexAt(int i) { return m_vertexArray[i]; }
 
-            uint colocalVertexCount() const { return m_colocalVertexCount; }
+            //uint colocalVertexCount() const { return m_colocalVertexCount; }
 
             // Faces
             uint faceCount() const { return m_faceArray.count(); }
@@ -224,11 +224,12 @@ namespace nv
             mutable uint errorIndex0;
             mutable uint errorIndex1;
 
+            Edge * addEdge(uint i, uint j);
+
         private:
 
             bool canAddFace(const Array<uint> & indexArray, uint first, uint num) const;
             bool canAddEdge(uint i, uint j) const;
-            Edge * addEdge(uint i, uint j);
 
             Edge * findEdge(uint i, uint j) const;
 
@@ -256,7 +257,8 @@ namespace nv
 
             HashMap<Key, Edge *> m_edgeMap;
 
-            uint m_colocalVertexCount;
+        public:
+            uint colocalVertexCount;
 
         };
         /*

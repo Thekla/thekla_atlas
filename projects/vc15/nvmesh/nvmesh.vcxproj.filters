@@ -16,6 +16,9 @@
     <Filter Include="weld">
       <UniqueIdentifier>{f888e3ef-171b-45bd-9a31-678afccd8132}</UniqueIdentifier>
     </Filter>
+    <Filter Include="export">
+      <UniqueIdentifier>{77f8fed8-a2a6-4943-878c-65c728453b74}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\nvmesh\geometry\Measurements.cpp">
@@ -69,6 +72,9 @@
     <ClCompile Include="..\..\..\src\nvmesh\MeshBuilder.cpp" />
     <ClCompile Include="..\..\..\src\nvmesh\MeshTopology.cpp" />
     <ClCompile Include="..\..\..\src\nvmesh\nvmesh.cpp" />
+    <ClCompile Include="..\..\..\src\nvmesh\export\MeshExportOBJ.cpp">
+      <Filter>export</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\nvmesh\geometry\Measurements.h">
@@ -121,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\nvmesh\MeshBuilder.h" />
     <ClInclude Include="..\..\..\src\nvmesh\nvmesh.h" />
+    <ClInclude Include="..\..\..\src\nvmesh\export\MeshExportOBJ.h">
+      <Filter>export</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\..\src\nvmesh\param\BoundaryMap.h">

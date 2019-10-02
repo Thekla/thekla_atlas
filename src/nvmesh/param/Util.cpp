@@ -36,7 +36,8 @@ bool nv::isTriangularMesh(const HalfEdge::Mesh * mesh)
     for (HalfEdge::Mesh::ConstFaceIterator it(mesh->faces()); !it.isDone(); it.advance())
     {
         const HalfEdge::Face * face = it.current();
-        if (face->edgeCount() != 3) return false;
+        if (face->edgeCount() != 3) 
+            return false;
     }
     return true;
 }
@@ -59,6 +60,19 @@ uint nv::countMeshTriangles(const HalfEdge::Mesh * mesh)
     }
 
     return triangleCount;
+}
+
+uint nv::countBoundaryVertices(const HalfEdge::Mesh * mesh)
+{
+    uint boundaryVertexCount = 0;
+    
+    const uint vertexCount = mesh->vertexCount();
+    for (uint v = 0; v < vertexCount; v++) {
+        const HalfEdge::Vertex * vertex = mesh->vertexAt(v);
+        if (vertex->isBoundary()) boundaryVertexCount += 1;
+    }
+
+    return boundaryVertexCount;
 }
 
 const HalfEdge::Vertex * nv::findBoundaryVertex(const HalfEdge::Mesh * mesh)
@@ -85,7 +99,10 @@ HalfEdge::Mesh * nv::unifyVertices(const HalfEdge::Mesh * inputMesh)
         const HalfEdge::Vertex * vertex = inputMesh->vertexAt(v);
         
         if (vertex->isFirstColocal()) {
-            mesh->addVertex(vertex->pos);
+            HalfEdge::Vertex * v = mesh->addVertex(vertex->pos);
+            v->nor = vertex->nor;
+            v->tex = vertex->tex;
+            v->col = vertex->col;
         }
     }
 
@@ -133,8 +150,12 @@ HalfEdge::Mesh * nv::triangulate(const HalfEdge::Mesh * inputMesh)
     const uint vertexCount = inputMesh->vertexCount();
     for (uint v = 0; v < vertexCount; v++) {
         const HalfEdge::Vertex * vertex = inputMesh->vertexAt(v);
-        mesh->addVertex(vertex->pos);
+        HalfEdge::Vertex * new_vertex = mesh->addVertex(vertex->pos);
+        new_vertex->nor = vertex->nor;
+        new_vertex->tex = vertex->tex;
+        new_vertex->col = vertex->col;
     }
+    mesh->colocalVertexCount = inputMesh->colocalVertexCount;
 
     Array<int> polygonVertices;
     Array<float> polygonAngles;

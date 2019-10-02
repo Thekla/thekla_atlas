@@ -103,7 +103,6 @@
       <AdditionalIncludeDirectories>../../..;../../../src;../../../src/nvmesh;../../../extern/poshlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling />
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -155,6 +154,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\nvmesh\export\MeshExportOBJ.cpp" />
     <ClCompile Include="..\..\..\src\nvmesh\geometry\Measurements.cpp" />
     <ClCompile Include="..\..\..\src\nvmesh\halfedge\Edge.cpp" />
     <ClCompile Include="..\..\..\src\nvmesh\halfedge\Face.cpp" />
@@ -188,6 +188,7 @@
     <ClCompile Include="..\..\..\src\nvmesh\raster\Raster.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\nvmesh\export\MeshExportOBJ.h" />
     <ClInclude Include="..\..\..\src\nvmesh\geometry\Measurements.h" />
     <ClInclude Include="..\..\..\src\nvmesh\halfedge\Edge.h" />
     <ClInclude Include="..\..\..\src\nvmesh\halfedge\Face.h" />

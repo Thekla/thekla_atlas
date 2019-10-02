@@ -54,16 +54,18 @@ struct Atlas_Options {
     } charter_options;
 
     Atlas_Mapper mapper;
-    union {
+    struct {
+        bool preserve_uvs;
+        bool preserve_boundary;
     } mapper_options;
 
     Atlas_Packer packer;
     union {
         struct {
             int packing_quality;
-            float texel_area;       // This is not really texel area, but 1 / texel width?
-            bool block_align;       // Align charts to 4x4 blocks. 
-            bool conservative;      // Pack charts with extra padding.
+            float texels_per_unit;      // Unit to texel scale. e.g. a 1x1 quad with texelsPerUnit of 32 will take up approximately 32x32 texels in the atlas.
+            bool block_align;           // Align charts to 4x4 blocks. 
+            bool conservative;          // Pack charts with extra padding.
         } witness;
     } packer_options;
 };
@@ -109,6 +111,9 @@ enum Atlas_Error {
     Atlas_Error_Invalid_Mesh_Non_Manifold,
     Atlas_Error_Not_Implemented,
 };
+
+typedef void Atlas_Debug_Output(const char * output);
+THEKLA_ATLAS_API void atlas_set_debug_output(Atlas_Debug_Output * output);
 
 THEKLA_ATLAS_API void atlas_set_default_options(Atlas_Options * options);
 

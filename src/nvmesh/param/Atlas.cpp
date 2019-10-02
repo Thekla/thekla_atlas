@@ -11,7 +11,7 @@
 #include "LeastSquaresConformalMap.h"
 #include "ParameterizationQuality.h"
 
-//#include "nvmesh/export/MeshExportOBJ.h"
+#include "nvmesh/export/MeshExportOBJ.h"
 
 #include "nvmesh/halfedge/Mesh.h"
 #include "nvmesh/halfedge/Face.h"
@@ -91,10 +91,10 @@ void Atlas::addMeshCharts(MeshCharts * meshCharts)
     m_meshChartsArray.append(meshCharts);
 }
 
-void Atlas::extractCharts(const HalfEdge::Mesh * mesh)
+void Atlas::extractCharts(const HalfEdge::Mesh * mesh, bool ensure_disk_charts)
 {
     MeshCharts * meshCharts = new MeshCharts(mesh);
-    meshCharts->extractCharts();
+    meshCharts->extractCharts(ensure_disk_charts);
     addMeshCharts(meshCharts);
 }
 
@@ -223,10 +223,10 @@ bool Atlas::computeSeamlessTextureAtlas(bool groupFaces/*= true*/, bool scaleTil
 #endif
 
 
-void Atlas::parameterizeCharts()
+void Atlas::parameterizeCharts(bool preserve_uvs, bool pinned_boundary)
 {
     foreach(i, m_meshChartsArray) {
-        m_meshChartsArray[i]->parameterizeCharts();
+        m_meshChartsArray[i]->parameterizeCharts(preserve_uvs, pinned_boundary);
     }
 }
 
@@ -253,12 +253,13 @@ MeshCharts::~MeshCharts()
 }
 
 
-void MeshCharts::extractCharts()
+void MeshCharts::extractCharts(bool ensure_disk_charts)
 {
     const uint faceCount = m_mesh->faceCount();
 
     int first = 0;
     Array<uint> queue(faceCount);
+    Array<uint> boundaries(faceCount);
 
     BitArray bitFlags(faceCount);
     bitFlags.clearAll();
@@ -267,45 +268,120 @@ void MeshCharts::extractCharts()
     {
         if (bitFlags.bitAt(f) == false)
         {
-            // Start new patch. Reset queue.
-            first = 0;
-            queue.clear();
-            queue.append(f);
-            bitFlags.setBitAt(f);
+            // Two trials:
+            // - Why are we doing things this way? If we have two charts that each happen to a boundary edge with the same uvs, then the region growing algorithm
+            //   consider them to be a single chart. If we respect all seams, then normal seams will be considered chart boundaries and will have too many seams.
+            //   This solution does not fix the problem entirely, but it provides a workaround for the case that growing the charts too aggressively results in 
+            //   non-disk chart topologies. Ideally we should preserve the original connectivity in the input mesh.
+            for (uint t = 0; t < 2; t++) {
 
-            while (first != queue.count())
-            {
-                const HalfEdge::Face * face = m_mesh->faceAt(queue[first]);
+                // Start new patch. Reset queue.
+                first = 0;
+                queue.clear();
+                //boundaries.clear();
+                queue.append(f);
+                bitFlags.setBitAt(f);
 
-                // Visit face neighbors of queue[first]
-                for (HalfEdge::Face::ConstEdgeIterator it(face->edges()); !it.isDone(); it.advance())
+                while (first != queue.count())
                 {
-                    const HalfEdge::Edge * edge = it.current();
-                    nvDebugCheck(edge->pair != NULL);
+                    const HalfEdge::Face * face = m_mesh->faceAt(queue[first]);
 
-                    if (!edge->isBoundary() && /*!edge->isSeam()*/ 
-                        //!(edge->from()->tex() != edge->pair()->to()->tex() || edge->to()->tex() != edge->pair()->from()->tex()))
-                        !(edge->from() != edge->pair->to() || edge->to() != edge->pair->from())) // Preserve existing seams (not just texture seams).
+                    // Visit face neighbors of queue[first]
+                    for (HalfEdge::Face::ConstEdgeIterator it(face->edges()); !it.isDone(); it.advance())
                     {
-                        const HalfEdge::Face * neighborFace = edge->pair->face;
-                        nvDebugCheck(neighborFace != NULL);
+                        const HalfEdge::Edge * edge = it.current();
+                        nvDebugCheck(edge->pair != NULL);
 
-                        if (bitFlags.bitAt(neighborFace->id) == false)
+                        bool is_boundary = edge->isBoundary();
+                        bool is_seam = edge->isSeam();
+                        bool is_tex_seam = edge->vertex->tex != edge->pair->next->vertex->tex || edge->next->vertex->tex != edge->pair->vertex->tex;
+
+                        // During the first try we stop growing chart at texture seams only.
+                        // On the second try we stop at any seam.
+                        if (t == 0) is_seam = is_tex_seam;
+
+                        if (!is_boundary && !is_seam) 
                         {
-                            queue.append(neighborFace->id);
-                            bitFlags.setBitAt(neighborFace->id);
+                            const HalfEdge::Face * neighborFace = edge->pair->face;
+                            nvDebugCheck(neighborFace != NULL);
+
+                            if (bitFlags.bitAt(neighborFace->id) == false)
+                            {
+                                queue.append(neighborFace->id);
+                                bitFlags.setBitAt(neighborFace->id);
+                            }
+                        }
+                        else {
+                            //boundaries.append(edge->id);
                         }
                     }
+
+                    first++;
                 }
 
-                first++;
+                Chart * chart = new Chart();
+                chart->build(m_mesh, queue, /*from_uvs=*/true);
+
+                // If not a disk on our first try, delete this chart and try again.
+                if (t == 0 && !chart->isDisk()) {
+                    foreach(q, queue) {
+                        bitFlags.clearBitAt(queue[q]);
+                    }
+                    delete chart;
+                    continue;
+                }
+
+                m_chartArray.append(chart);
+                break;
             }
-
-            Chart * chart = new Chart();
-            chart->build(m_mesh, queue);
-
-            m_chartArray.append(chart);
         }
+    }
+
+    const uint chartCount = m_chartArray.count();
+
+    // Print summary.
+    int disk_count = 0;
+    for (uint i = 0; i < chartCount; i++) {
+        const Chart * chart = m_chartArray[i];
+        disk_count += chart->isDisk();
+    }
+    //nvDebug("--- Extracted %d charts (%d with disk topology).\n", m_chartArray.count(), disk_count);
+
+    // Build face indices.
+    m_faceChart.resize(m_mesh->faceCount());
+    m_faceIndex.resize(m_mesh->faceCount());
+
+    for (uint i = 0; i < chartCount; i++)
+    {
+        const Chart * chart = m_chartArray[i];
+
+        const uint faceCount = chart->faceCount();
+        for (uint f = 0; f < faceCount; f++)
+        {
+            uint idx = chart->faceAt(f);
+            m_faceChart[idx] = i;
+            m_faceIndex[idx] = f;
+        }
+    }
+
+    // Build an exclusive prefix sum of the chart vertex counts.
+    m_chartVertexCountPrefixSum.resize(chartCount);
+
+    if (chartCount > 0)
+    {
+        m_chartVertexCountPrefixSum[0] = 0;
+
+        for (uint i = 1; i < chartCount; i++)
+        {
+            const Chart * chart = m_chartArray[i - 1];
+            m_chartVertexCountPrefixSum[i] = m_chartVertexCountPrefixSum[i - 1] + chart->vertexCount();
+        }
+
+        m_totalVertexCount = m_chartVertexCountPrefixSum[chartCount - 1] + m_chartArray[chartCount - 1]->vertexCount();
+    }
+    else
+    {
+        m_totalVertexCount = 0;
     }
 }
 
@@ -431,19 +507,19 @@ void MeshCharts::computeCharts(const SegmentationSettings & settings, const Arra
         uint maxSeedCount = max(6U, builder.facesLeft);
 
         // Create initial charts greedely.
-        nvDebug("### Placing seeds\n");
+        //nvDebug("### Placing seeds\n");
         builder.placeSeeds(maxThreshold, maxSeedCount);
-        nvDebug("###   Placed %d seeds (max = %d)\n", builder.chartCount(), maxSeedCount);
+        //nvDebug("###   Placed %d seeds (max = %d)\n", builder.chartCount(), maxSeedCount);
 
         builder.updateProxies();
 
         builder.mergeCharts();
 
     #if 1
-        nvDebug("### Relocating seeds\n");
+        //nvDebug("### Relocating seeds\n");
         builder.relocateSeeds();
 
-        nvDebug("### Reset charts\n");
+        //nvDebug("### Reset charts\n");
         builder.resetCharts();
 
         if (vertexMap != NULL) {
@@ -452,7 +528,7 @@ void MeshCharts::computeCharts(const SegmentationSettings & settings, const Arra
 
         builder.settings = settings;
 
-        nvDebug("### Growing charts\n");
+        //nvDebug("### Growing charts\n");
 
         // Restart process growing charts in parallel.
         uint iteration = 0;
@@ -460,24 +536,24 @@ void MeshCharts::computeCharts(const SegmentationSettings & settings, const Arra
         {
             if (!builder.growCharts(maxThreshold, growFaceCount))
             {
-                nvDebug("### Can't grow anymore\n");
+                //nvDebug("### Can't grow anymore\n");
 
                 // If charts cannot grow more: fill holes, merge charts, relocate seeds and start new iteration.
 
-                nvDebug("### Filling holes\n");
+                //nvDebug("### Filling holes\n");
                 builder.fillHoles(maxThreshold);
-                nvDebug("###   Using %d charts now\n", builder.chartCount());
+                //nvDebug("###   Using %d charts now\n", builder.chartCount());
 
                 builder.updateProxies();
 
-                nvDebug("### Merging charts\n");
+                //nvDebug("### Merging charts\n");
                 builder.mergeCharts();
-                nvDebug("###   Using %d charts now\n", builder.chartCount());
+                //nvDebug("###   Using %d charts now\n", builder.chartCount());
 
-                nvDebug("### Reseeding\n");
+                //nvDebug("### Reseeding\n");
                 if (!builder.relocateSeeds())
                 {
-                    nvDebug("### Cannot relocate seeds anymore\n");
+                    //nvDebug("### Cannot relocate seeds anymore\n");
 
                     // Done!
                     break;
@@ -485,19 +561,19 @@ void MeshCharts::computeCharts(const SegmentationSettings & settings, const Arra
 
                 if (iteration == maxIterations)
                 {
-                    nvDebug("### Reached iteration limit\n");
+                    //nvDebug("### Reached iteration limit\n");
                     break;
                 }
                 iteration++;
 
-                nvDebug("### Reset charts\n");
+                //nvDebug("### Reset charts\n");
                 builder.resetCharts();
 
                 if (vertexMap != NULL) {
                     builder.markUnchartedFaces(vertexMap->faceArray());
                 }
 
-                nvDebug("### Growing charts\n");
+                //nvDebug("### Growing charts\n");
             }
         };
     #endif
@@ -556,15 +632,16 @@ void MeshCharts::computeCharts(const SegmentationSettings & settings, const Arra
     }
 }
 
+#include <stdio.h> // @@ tmp.
 
-void MeshCharts::parameterizeCharts()
+void MeshCharts::parameterizeCharts(bool preserve_uvs, bool pinned_boundary)
 {
     ParameterizationQuality globalParameterizationQuality;
 
     // Parameterize the charts.
     uint diskCount = 0;
     const uint chartCount = m_chartArray.count();
-    for (uint i = 0; i < chartCount; i++)\
+    for (uint i = 0; i < chartCount; i++)
     {
         Chart * chart = m_chartArray[i];
 
@@ -574,67 +651,71 @@ void MeshCharts::parameterizeCharts()
             continue;
         }
 
-        if (chart->isDisk())
+        if (!preserve_uvs)
         {
-            diskCount++;
+            if (chart->isDisk())
+            {
+                diskCount++;
 
-            ParameterizationQuality chartParameterizationQuality;
-
-            if (chart->faceCount() == 1) {
-                computeSingleFaceMap(chart->unifiedMesh());
-
-                chartParameterizationQuality = ParameterizationQuality(chart->unifiedMesh());
-            }
-            else {
-                computeOrthogonalProjectionMap(chart->unifiedMesh());
-                ParameterizationQuality orthogonalQuality(chart->unifiedMesh());
-
-                computeLeastSquaresConformalMap(chart->unifiedMesh());
-                ParameterizationQuality lscmQuality(chart->unifiedMesh());
-                
-                // If the orthogonal projection produces better results, just use that.
-                // @@ It may be dangerous to do this, because isValid() does not detect self-overlaps.
-                // @@ Another problem is that with very thin patches with nearly zero parametric area, the results of our metric are not accurate.
-                if (orthogonalQuality.isValid() && orthogonalQuality.rmsStretchMetric() < lscmQuality.rmsStretchMetric()) {
-                    computeOrthogonalProjectionMap(chart->unifiedMesh());
-                    chartParameterizationQuality = orthogonalQuality;
+                if (chart->faceCount() == 1) {
+                    computeSingleFaceMap(chart->unifiedMesh());
                 }
                 else {
-                    chartParameterizationQuality = lscmQuality;
+                    if (pinned_boundary) {
+                        computeLeastSquaresConformalMap(chart->unifiedMesh(), true);
+                    }
+                    else {
+                        computeOrthogonalProjectionMap(chart->unifiedMesh());
+                        ParameterizationQuality orthogonalQuality(chart->unifiedMesh());
+
+                        computeLeastSquaresConformalMap(chart->unifiedMesh(), pinned_boundary);
+                        ParameterizationQuality lscmQuality(chart->unifiedMesh());
+
+                        // If the orthogonal projection produces better results, just use that.
+                        // @@ It may be dangerous to do this, because isValid() does not detect self-overlaps.
+                        // @@ Another problem is that with very thin patches with nearly zero parametric area, the results of our metric are not accurate.
+                        if (orthogonalQuality.isValid() && orthogonalQuality.rmsStretchMetric() < lscmQuality.rmsStretchMetric()) {
+                            computeOrthogonalProjectionMap(chart->unifiedMesh());
+                            //chartParameterizationQuality = orthogonalQuality;
+                        }
+                        else {
+                            //chartParameterizationQuality = lscmQuality;
+                        }
+                    }
+
+                    // If conformal map failed, 
+
+                    // @@ Experiment with other parameterization methods.
+                    //computeCircularBoundaryMap(chart->unifiedMesh());
+                    //computeConformalMap(chart->unifiedMesh());
+                    //computeNaturalConformalMap(chart->unifiedMesh());
+                    //computeGuidanceGradientMap(chart->unifiedMesh());
                 }
-
-                // If conformal map failed, 
-
-                // @@ Experiment with other parameterization methods.
-                //computeCircularBoundaryMap(chart->unifiedMesh());
-                //computeConformalMap(chart->unifiedMesh());
-                //computeNaturalConformalMap(chart->unifiedMesh());
-                //computeGuidanceGradientMap(chart->unifiedMesh());
             }
-
-            //ParameterizationQuality chartParameterizationQuality(chart->unifiedMesh());
-
-            isValid = chartParameterizationQuality.isValid();
-
-            if (!isValid)
-            {
-                nvDebug("*** Invalid parameterization.\n");
-#if 0
-                // Dump mesh to inspect problem:
-                static int pieceCount = 0;
-            
-                StringBuilder fileName;
-                fileName.format("invalid_chart_%d.obj", pieceCount++);
-                exportMesh(chart->unifiedMesh(), fileName.str()); 
-#endif
-            }
-
-            // @@ Check that parameterization quality is above a certain threshold.
-
-            // @@ Detect boundary self-intersections.
-
-            globalParameterizationQuality += chartParameterizationQuality;
         }
+
+        ParameterizationQuality chartParameterizationQuality(chart->unifiedMesh());
+
+        isValid = chartParameterizationQuality.isValid();
+
+        if (!isValid)
+        {
+            nvDebug("*** Invalid parameterization.\n");
+#if 0
+            // Dump mesh to inspect problem:
+            static int pieceCount = 0;
+            
+            StringBuilder fileName;
+            fileName.format("invalid_chart_%d.obj", pieceCount++);
+            exportMesh(chart->unifiedMesh(), fileName.str()); 
+#endif
+        }
+
+        // @@ Check that parameterization quality is above a certain threshold.
+
+        // @@ Detect boundary self-intersections.
+
+        globalParameterizationQuality += chartParameterizationQuality;
 
         if (!isValid)
         {
@@ -645,7 +726,6 @@ void MeshCharts::parameterizeCharts()
 
         // Transfer parameterization from unified mesh to chart mesh.
         chart->transferParameterization();
-
     }
 
     nvDebug("  Parameterized %d/%d charts.\n", diskCount, chartCount);
@@ -653,6 +733,7 @@ void MeshCharts::parameterizeCharts()
     nvDebug("  MAX stretch metric: %f\n", globalParameterizationQuality.maxStretchMetric());
     nvDebug("  RMS conformal metric: %f\n", globalParameterizationQuality.rmsConformalMetric());
     nvDebug("  RMS authalic metric: %f\n", globalParameterizationQuality.maxAuthalicMetric());
+    fflush(stdout);
 }
 
 
@@ -661,7 +742,7 @@ Chart::Chart() : m_chartMesh(NULL), m_unifiedMesh(NULL), m_isDisk(false), m_isVe
 {
 }
 
-void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceArray)
+void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceArray, bool from_uvs/*=false*/)
 {
     // Copy face indices.
     m_faceArray = faceArray;
@@ -677,6 +758,8 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
     Array<uint> unifiedMeshIndices;
     unifiedMeshIndices.resize(meshVertexCount, ~0);
 
+    HashMap<Vector2, uint> uvVertexMap;
+
     // Add vertices.
     const uint faceCount = faceArray.count();
     for (uint f = 0; f < faceCount; f++)
@@ -689,23 +772,54 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
             const HalfEdge::Vertex * vertex = it.current()->vertex;
             const HalfEdge::Vertex * unifiedVertex = vertex->firstColocal();
 
-            if (unifiedMeshIndices[unifiedVertex->id] == ~0)
-            {
-                unifiedMeshIndices[unifiedVertex->id] = m_unifiedMesh->vertexCount();
+            if (from_uvs) {
+                // @@ Unify vertices on the fly, instead of relying on the colocals?
+                uint index = m_unifiedMesh->vertexCount();
+                if (!uvVertexMap.get(vertex->tex, &index)) {
+                    HalfEdge::Vertex * v = m_unifiedMesh->addVertex(Vector3(vertex->tex, 0));
+                    v->nor = vertex->pos; // This is a hack to easily restore the positions later! We can probably do this through the index buffers, but this is more simple.
+                    v->tex = vertex->tex;
+                }
 
-                nvDebugCheck(vertex->pos == unifiedVertex->pos);
-                m_unifiedMesh->addVertex(vertex->pos);
+                // This maps original -> unified vertex indices.
+                if (unifiedMeshIndices[vertex->id] == ~0) {
+                    unifiedMeshIndices[vertex->id] = index;
+                }
+
+                // This maps original -> chart vertex indices.
+                if (chartMeshIndices[vertex->id] == ~0) {
+                    chartMeshIndices[vertex->id] = index;
+                }
+
+                if (index != m_unifiedMesh->vertexCount()) {
+                    HalfEdge::Vertex * v = m_chartMesh->addVertex(Vector3(vertex->tex, 0));
+                    v->nor = vertex->pos; // This is a hack to easily restore the positions later! We can probably do this through the index buffers, but this is more simple.
+                    v->tex = vertex->tex;
+
+                    m_chartToOriginalMap.append(vertex->id);
+                    m_chartToUnifiedMap.append(unifiedMeshIndices[vertex->id]); // index?
+                }
             }
+            else {
+                if (unifiedMeshIndices[unifiedVertex->id] == ~0)
+                {
+                    unifiedMeshIndices[unifiedVertex->id] = m_unifiedMesh->vertexCount();
 
-            if (chartMeshIndices[vertex->id] == ~0)
-            {
-                chartMeshIndices[vertex->id] = m_chartMesh->vertexCount();
-                m_chartToOriginalMap.append(vertex->id);
-                m_chartToUnifiedMap.append(unifiedMeshIndices[unifiedVertex->id]);
+                    nvDebugCheck(vertex->pos == unifiedVertex->pos);
+                    HalfEdge::Vertex * v = m_unifiedMesh->addVertex(vertex->pos);
+                    v->tex = vertex->tex;
+                }
 
-                HalfEdge::Vertex * v = m_chartMesh->addVertex(vertex->pos);
-                v->nor = vertex->nor;
-                v->tex = vertex->tex;
+                if (chartMeshIndices[vertex->id] == ~0)
+                {
+                    chartMeshIndices[vertex->id] = m_chartMesh->vertexCount();
+                    m_chartToOriginalMap.append(vertex->id);
+                    m_chartToUnifiedMap.append(unifiedMeshIndices[unifiedVertex->id]);
+
+                    HalfEdge::Vertex * v = m_chartMesh->addVertex(vertex->pos);
+                    v->nor = vertex->nor;
+                    v->tex = vertex->tex;
+                }
             }
         }
     }
@@ -715,6 +829,11 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
 
     m_chartMesh->linkColocals();    
     //m_unifiedMesh->linkColocals();  // Not strictly necessary, no colocals in the unified mesh. # Wrong.
+    m_unifiedMesh->colocalVertexCount = m_unifiedMesh->vertexCount();
+
+    if (from_uvs) {
+        m_unifiedMesh->linkColocals();
+    }
 
     // This check is not valid anymore, if the original mesh vertices were linked with a canonical map, then it might have
     // some colocal vertices that were unlinked. So, the unified mesh might have some duplicate vertices, because firstColocal()
@@ -723,7 +842,6 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
 
     // Is that OK? What happens in meshes were that happens? Does anything break? Apparently not...
     
-
 
     Array<uint> faceIndices(7);
 
@@ -752,7 +870,9 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
             const HalfEdge::Vertex * vertex = it.current()->vertex;
             nvDebugCheck(vertex != NULL);
 
-            vertex = vertex->firstColocal();
+            if (!from_uvs) {
+                vertex = vertex->firstColocal();
+            }
 
             faceIndices.append(unifiedMeshIndices[vertex->id]);
         }
@@ -760,8 +880,10 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
         m_unifiedMesh->addFace(faceIndices);
     }
 
+
     m_chartMesh->linkBoundary();
     m_unifiedMesh->linkBoundary();
+
 
     //exportMesh(m_unifiedMesh.ptr(), "debug_input.obj");
 
@@ -783,9 +905,30 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
         exportMesh(m_unifiedMesh.ptr(), fileName.str());*/
     }
 
-    m_unifiedMesh = triangulate(m_unifiedMesh.ptr());
-    
+    if (!isTriangularMesh(m_unifiedMesh.ptr())) {
+        m_unifiedMesh = ::triangulate(m_unifiedMesh.ptr());
+    }
+
     //exportMesh(m_unifiedMesh.ptr(), "debug_triangulated.obj");
+
+    if (from_uvs) {
+        // @@ Hack!
+        // The other way to do this is to traverse the original vertices, lookup the unified/chart vertex index using the *MeshIndices arrays.
+        // If not ~0, then write the position to the corresponding unified index location.
+
+        // Restore vertex positions in UV chart.
+        uint vertex_count = m_unifiedMesh->vertexCount();
+        for (uint v = 0; v < vertex_count; v++) {
+            HalfEdge::Vertex * vertex = m_unifiedMesh->vertexAt(v);
+            vertex->pos = vertex->nor;
+        }
+
+        vertex_count = m_chartMesh->vertexCount();
+        for (uint v = 0; v < vertex_count; v++) {
+            HalfEdge::Vertex * vertex = m_chartMesh->vertexAt(v);
+            vertex->pos = vertex->nor;
+        }
+    }
 
 
     // Analyze chart topology.
@@ -795,26 +938,15 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
     // This is sometimes failing, when triangulate fails to add a triangle, it generates a hole in the mesh.
     //nvDebugCheck(m_isDisk);
 
-    /*if (!m_isDisk) {
-        static int pieceCount = 0;
-        StringBuilder fileName;
-        fileName.format("debug_hole_%d.obj", pieceCount++);
-        exportMesh(m_unifiedMesh.ptr(), fileName.str());
-    }*/
-
-
 #if 0
     if (!m_isDisk) {
-        nvDebugBreak();
-
         static int pieceCount = 0;
-        
+
         StringBuilder fileName;
         fileName.format("debug_nodisk_%d.obj", pieceCount++);
-        exportMesh(m_chartMesh.ptr(), fileName.str()); 
+        exportMesh(m_chartMesh.ptr(), fileName.str());
     }
 #endif
-
 }
 
 

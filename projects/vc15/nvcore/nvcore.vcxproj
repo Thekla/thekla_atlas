@@ -170,6 +170,7 @@
     <ClInclude Include="..\..\..\src\nvcore\StdStream.h" />
     <ClInclude Include="..\..\..\src\nvcore\Stream.h" />
     <ClInclude Include="..\..\..\src\nvcore\StrLib.h" />
+    <ClInclude Include="..\..\..\src\nvcore\TextWriter.h" />
     <ClInclude Include="..\..\..\src\nvcore\Utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +189,7 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\nvcore\RadixSort.cpp" />
     <ClCompile Include="..\..\..\src\nvcore\StrLib.cpp" />
+    <ClCompile Include="..\..\..\src\nvcore\TextWriter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
