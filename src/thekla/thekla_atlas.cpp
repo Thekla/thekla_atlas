@@ -162,6 +162,7 @@ void Thekla::atlas_set_default_options(Atlas_Options * options) {
 
 
 Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const Atlas_Options * options, Atlas_Error * error) {
+    *error = Atlas_Error_Success;
     // Validate args.
     if (input == NULL || options == NULL || error == NULL) return set_error(error, Atlas_Error_Invalid_Args);
 
@@ -207,7 +208,7 @@ Atlas_Output_Mesh * Thekla::atlas_generate(const Atlas_Input_Mesh * input, const
 
     input_to_mesh(input, mesh.ptr(), error);
 
-    if (*error == Atlas_Error_Invalid_Mesh) {
+    if (*error != Atlas_Error_Success) {
         return NULL;
     }
 

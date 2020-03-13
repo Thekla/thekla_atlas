@@ -13,7 +13,7 @@ namespace nv {
     uint countBoundaryVertices(const HalfEdge::Mesh * mesh);
     const HalfEdge::Vertex * findBoundaryVertex(const HalfEdge::Mesh * mesh);
 
-    HalfEdge::Mesh * unifyVertices(const HalfEdge::Mesh * inputMesh);
+    HalfEdge::Mesh * unifyVertices(const HalfEdge::Mesh * inputMesh, uint *chartToUnifiedMap, uint chartToUnifiedMapCount);
     HalfEdge::Mesh * triangulate(const HalfEdge::Mesh * inputMesh);
 
 } // nv namespace

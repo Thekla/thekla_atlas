@@ -153,6 +153,8 @@ namespace nv
         float computeParametricArea() const;
         Vector2 computeParametricBounds() const;
 
+        void checkCharts(const HalfEdge::Mesh * originalMesh) const;
+
 
         float scale = 1.0f;
         uint vertexMapWidth;

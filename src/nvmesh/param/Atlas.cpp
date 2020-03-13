@@ -252,6 +252,12 @@ MeshCharts::~MeshCharts()
     deleteAll(m_chartArray);
 }
 
+void Chart::checkCharts(const HalfEdge::Mesh * originalMesh) const {
+    for (uint i = 0; i < vertexCount(); i++) {
+        auto v_orig = originalMesh->vertexAt(mapChartVertexToOriginalVertex(i));
+        auto v_unif = unifiedMesh()->vertexAt(mapChartVertexToUnifiedVertex(i));
+    }
+}
 
 void MeshCharts::extractCharts(bool ensure_disk_charts)
 {
@@ -888,7 +894,7 @@ void Chart::build(const HalfEdge::Mesh * originalMesh, const Array<uint> & faceA
     //exportMesh(m_unifiedMesh.ptr(), "debug_input.obj");
 
     if (m_unifiedMesh->splitBoundaryEdges()) {
-        m_unifiedMesh = unifyVertices(m_unifiedMesh.ptr());
+        m_unifiedMesh = unifyVertices(m_unifiedMesh.ptr(), m_chartToUnifiedMap.buffer(), m_chartToUnifiedMap.count());
     }
 
     //exportMesh(m_unifiedMesh.ptr(), "debug_split.obj");

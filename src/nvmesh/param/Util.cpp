@@ -89,20 +89,34 @@ const HalfEdge::Vertex * nv::findBoundaryVertex(const HalfEdge::Mesh * mesh)
 }
 
 
-HalfEdge::Mesh * nv::unifyVertices(const HalfEdge::Mesh * inputMesh)
+HalfEdge::Mesh * nv::unifyVertices(const HalfEdge::Mesh * inputMesh, uint *chartToUnifiedMap, uint chartToUnifiedMapCount)
 {
     HalfEdge::Mesh * mesh = new HalfEdge::Mesh;
     
     // Only add the first colocal.
-    const uint vertexCount = inputMesh->vertexCount();
-    for (uint v = 0; v < vertexCount; v++) {
+    nv::Array<uint> inputMesh_to_newMesh;
+    inputMesh_to_newMesh.resize(inputMesh->vertexCount(), ~0);
+    for (uint v = 0; v < inputMesh->vertexCount(); v++) {
         const HalfEdge::Vertex * vertex = inputMesh->vertexAt(v);
-        
         if (vertex->isFirstColocal()) {
-            HalfEdge::Vertex * v = mesh->addVertex(vertex->pos);
-            v->nor = vertex->nor;
-            v->tex = vertex->tex;
-            v->col = vertex->col;
+            HalfEdge::Vertex * vtx = mesh->addVertex(vertex->pos);
+            vtx->nor = vertex->nor;
+            vtx->tex = vertex->tex;
+            vtx->col = vertex->col;
+            inputMesh_to_newMesh[v] = vtx->id;
+        }
+    }
+    // patch chartToUnifiedMap
+    for (uint v = 0; v < inputMesh->vertexCount(); v++) {
+        const HalfEdge::Vertex * vertex = inputMesh->vertexAt(v);
+        uint colocal_id = vertex->isFirstColocal() ? vertex->id : vertex->firstColocal()->id;
+        uint new_vertex_idx = inputMesh_to_newMesh[colocal_id];
+        nvAssert(new_vertex_idx != ~0);
+        nvAssert(new_vertex_idx < mesh->vertexCount());
+        for (uint i = 0; i < chartToUnifiedMapCount; i++) {
+            if (chartToUnifiedMap[i] == vertex->id) {
+                chartToUnifiedMap[i] = new_vertex_idx;
+            }
         }
     }
 
@@ -118,8 +132,10 @@ HalfEdge::Mesh * nv::unifyVertices(const HalfEdge::Mesh * inputMesh)
         for (HalfEdge::Face::ConstEdgeIterator it(face->edges()); !it.isDone(); it.advance()) {
             const HalfEdge::Edge * edge = it.current();
             const HalfEdge::Vertex * vertex = edge->vertex->firstColocal();
-
-            indexArray.append(vertex->id);
+            uint vtx_idx = inputMesh_to_newMesh[vertex->id];
+            nvAssert(vtx_idx != (uint)-1);
+            //indexArray.append(vertex->id);
+            indexArray.append(vtx_idx);
         }
 
         mesh->addFace(indexArray);
