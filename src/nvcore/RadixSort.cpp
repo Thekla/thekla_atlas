@@ -1,4 +1,4 @@
-// This code is in the public domain -- Ignacio Castaño <castano@gmail.com>
+// This code is in the public domain -- Ignacio CastaÃ±o <castano@gmail.com>
 
 #include "RadixSort.h"
 
@@ -44,11 +44,23 @@ void createHistograms(const T * buffer, uint count, uint * histogram)
     // Build histograms.
     const uint8 * p = (const uint8 *)buffer; // @@ Does this break aliasing rules?
     const uint8 * pe = p + count * sizeof(T);
-
-    while (p != pe) {
-        h[0][*p++]++, h[1][*p++]++, h[2][*p++]++, h[3][*p++]++;
-        if (bucketCount == 8) h[4][*p++]++, h[5][*p++]++, h[6][*p++]++, h[7][*p++]++;
+    
+    if (bucketCount != 8)
+    {
+        while (p != pe)
+        {
+            h[0][*p++]++, h[1][*p++]++, h[2][*p++]++, h[3][*p++]++;
+        }
     }
+    else
+    {
+        while (p != pe)
+        {
+            h[0][*p++]++, h[1][*p++]++, h[2][*p++]++, h[3][*p++]++;
+            h[4][*p++]++, h[5][*p++]++, h[6][*p++]++, h[7][*p++]++;
+        }
+    }
+        
 }
 
 /*
