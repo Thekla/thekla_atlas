@@ -84,8 +84,8 @@ Obj_Mesh * obj_mesh_load(const char * filename, const Obj_Load_Options * options
             mesh->vertex_array[nv+v].normal[0] = shapes[s].mesh.normals[v * 3 + 0];
             mesh->vertex_array[nv+v].normal[1] = shapes[s].mesh.normals[v * 3 + 1];
             mesh->vertex_array[nv+v].normal[2] = shapes[s].mesh.normals[v * 3 + 2];
-            mesh->vertex_array[nv+v].uv[0] = shapes[s].mesh.texcoords[v * 3 + 0];      // The input UVs are provided as a hint to the chart generator.
-            mesh->vertex_array[nv+v].uv[1] = shapes[s].mesh.texcoords[v * 3 + 1];
+            mesh->vertex_array[nv+v].uv[0] = shapes[s].mesh.texcoords[v * 2 + 0];      // The input UVs are provided as a hint to the chart generator.
+            mesh->vertex_array[nv+v].uv[1] = shapes[s].mesh.texcoords[v * 2 + 1];
             mesh->vertex_array[nv+v].first_colocal = nv+v;
 
             // Link colocals. You probably want to do this more efficiently! Sort by one axis or use a hash or grid.
