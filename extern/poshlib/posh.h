@@ -517,7 +517,7 @@ Metrowerks:
 #  define POSH_CPU_STRING "IA64"
 #endif
 
-#if defined __X86__ || defined __i386__ || defined i386 || defined _M_IX86 || defined __386__ || defined __x86_64__ || defined _M_X64
+#if (defined __X86__ || defined __i386__ || defined i386 || defined _M_IX86 || defined __386__ || defined __x86_64__ || defined _M_X64) && !defined(_M_ARM64EC)
 #  define POSH_CPU_X86 1
 #  if defined __x86_64__ || defined _M_X64
 #     define POSH_CPU_X86_64 1 
@@ -527,6 +527,15 @@ Metrowerks:
 #  else
 #     define POSH_CPU_STRING "Intel 386+"
 #  endif
+#endif
+
+#if defined _M_ARM64 || defined _M_ARM64EC
+    # define POSH_CPU_STRING "ARM64"
+        #if defined _M_ARM64
+            #define POSH_CPU_ARM64 1
+        #elif defined _M_ARM64EC
+            #define POSH_CPU_ARM64_EC 1
+        #endif
 #endif
 
 #if defined __alpha || defined alpha || defined _M_ALPHA || defined __alpha__

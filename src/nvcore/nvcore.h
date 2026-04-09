@@ -116,6 +116,10 @@
 #   define NV_CPU_ARM 1
 #elif defined POSH_CPU_AARCH64
 #   define NV_CPU_ARM_64 1
+#elif defined POSH_CPU_ARM64
+#   define NV_CPU_ARM_64 1
+#elif defined POSH_CPU_ARM64_EC
+#   define NV_CPU_ARM_64_EC 1
 #else
 #   error "Unsupported CPU"
 #endif
