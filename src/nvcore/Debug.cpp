@@ -264,6 +264,8 @@ namespace
                 pExceptionInfo->ContextRecord->Eip;
             #elif defined(_M_AMD64)
                 pExceptionInfo->ContextRecord->Rip;
+            #elif defined(_M_ARM64 )
+                pExceptionInfo->ContextRecord->Pc;
             #else
                 #error Unsupported platform
             #endif
@@ -350,7 +352,7 @@ namespace
         // Init the stack frame for this function
         STACKFRAME64 stackFrame = { 0 };
 
-    #if NV_CPU_X86_64
+    #if NV_CPU_X86_64 || NV_CPU_ARM_64_EC
         DWORD dwMachineType = IMAGE_FILE_MACHINE_AMD64;
         stackFrame.AddrPC.Offset = ctx->Rip;
         stackFrame.AddrFrame.Offset = ctx->Rbp;
@@ -360,6 +362,11 @@ namespace
         stackFrame.AddrPC.Offset = ctx->Eip;
         stackFrame.AddrFrame.Offset = ctx->Ebp;
         stackFrame.AddrStack.Offset = ctx->Esp;
+    #elif NV_CPU_ARM_64
+        DWORD dwMachineType = IMAGE_FILE_MACHINE_ARM64;
+        stackFrame.AddrPC.Offset = ctx->Pc; // Program Counter
+        stackFrame.AddrFrame.Offset = ctx->Fp; // Frame Pointer (X29)
+        stackFrame.AddrStack.Offset = ctx->Sp; // Stack Pointer
     #else
         #error "Platform not supported!"
     #endif
